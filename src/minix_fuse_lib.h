@@ -1,34 +1,5 @@
-#define MINIX_SUPER_MAGIC    0x137F          /* original minix fs */
-#define MINIX_SUPER_MAGIC2   0x138F          /* minix fs, 30 char names */
-#define MINIX2_SUPER_MAGIC   0x2468	     /* minix V2 fs */
-#define MINIX2_SUPER_MAGIC2  0x2478	     /* minix V2 fs, 30 char names */
-
-#define BLOCK_SIZE 1024
-
-#define NR_ZONE_NUMS 9			/* zone numbers in an inode */
-#define NO_ZONE 0			/* indicates an empty inode zone entry */
-#define NR_DZONE_NUM 7 			/* Number of direct blocks */
-#define NR_INDIRECTS (BLOCK_SIZE/2)	/* Number of indirect blocks */
-#define DENTRY_SIZE 32			/* The size of a directory entry */
-#define INTS_PER_BLOCK (BLOCK_SIZE/sizeof(int)) /* number of ints that can be 
-					* stored in a block. */
-#define INT_BITS (sizeof(int) << 3)	/* number of bits in an int */
-#define BITS_PER_BLOCK (INTS_PER_BLOCK * INT_BITS)
-
-/* test not sure if i need these?? */
-#define HAVE_SETXATTR 1
-#define HAVE_GETXATTR 1
-
-#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
-
-#define TRUE 1
-#define FALSE 0
-
-
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
-
+#include "types.h"
+#include "const.h"
 
 struct minix_block {
 	char data[BLOCK_SIZE];
