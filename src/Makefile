@@ -29,7 +29,7 @@ minix_fuse.o : minix_fuse_lib.h minix_fuse.c
 minix_fuse_lib.o : minix_fuse_lib.h minix_fuse_lib.c
 	$(CC) -Wall -c minix_fuse_lib.c
 
-cache_test : cache_test.c cache.o comms.o
+cache_test : cache_test.c cache.o comms.o const.h
 	$(CC) -Wall cache_test.c cache.o comms.o -o cache_test
 
 cache.o : cache.h comms.h const.h cache.c
