@@ -10,7 +10,7 @@
 /**
  * For fatal error messages issued.
  */
-void panic(const char *s);
+void panic(const char *format, ...);
 
 
 
