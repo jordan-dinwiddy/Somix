@@ -35,6 +35,14 @@ struct minix_block {
 #define DATA_BLOCK	6				/* normal data block */
 
 /**
+ * Opens the block device on which the cache will operate.
+ *
+ * Failure to open the device will result with an error message and the program
+ * terminating.
+ */
+void open_blk_device(const char *d);
+
+/**
  * Initiate the buffer cache by preallocating the necessary buffers and linking
  * them together.
  */

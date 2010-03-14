@@ -7,15 +7,14 @@ extern struct minix_block *front;
 
 int main(void)
 {
-	printf("Attempting to create new block.YO..\n");
-	
+	open_blk_device("TEST3.IMG");	
 	init_cache();
 
 	struct minix_block *b1, *b2, *b3;
 
 	b1 = get_block(1, TRUE);
 	b2 = get_block(1002, TRUE);
-	b3 = get_block(16091, TRUE);
+	b3 = get_block(6091, TRUE);
 
 	b2 = get_block(1002, TRUE);
 

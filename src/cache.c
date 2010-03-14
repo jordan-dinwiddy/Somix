@@ -5,17 +5,42 @@
  *
  */
 
+#define _GNU_SOURCE		/* for O_DIRECT */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "const.h"
 #include "comms.h"
 #include "cache.h"
-#include <stdio.h>
 
 struct minix_block *front;	/* front of buffer chain. LRU. */
 struct minix_block *rear;	/* back of buffer chain. MRU. */
 struct minix_block 
 	*cache_hash[NR_BUF_HASH];	/* hash table of block chains */
-int bufs_in_use = 0;
+int bufs_in_use = 0;			/* number of buffers in use */
+int fd;					/* I/O device file descriptor */
+
+/**
+ * Opens the block device on which the cache will operate.
+ *
+ * Failure to open the device will result with an error message and program 
+ * terminating.
+ */
+void open_blk_device(const char *d)
+{
+	/* attempt to open device with flags:
+ 	 *  O_RDWR 	- for reading and writing
+ 	 *  O_DIRECT 	- for direct I/O with the device. I.e bypassing block
+ 	 *  		  buffer cache.
+ 	 */
+	if((fd = open(d, (O_RDWR | O_DIRECT))) < 0) {
+		/* problem with opening device */
+		panic("open_device(\"%s\"): unable to open device", d);
+	}
+}
 
 /**
  * Initiate the buffer cache by preallocating the necessary buffers and
@@ -261,18 +286,59 @@ void put_block(struct minix_block *blk, int block_type)
 
 }
 		
-
+/**
+ * Writes the given block to the device previously opened by
+ * open_blk_device(...).
+ *
+ * Failure to write the block will result in an error message and the program
+ * terminating.
+ */
 void write_block(struct minix_block *blk)
 {
-	debug("write_block(%d): writing block to disk...", blk->blk_nr);
+	int disk_offset = blk->blk_nr * BLOCK_SIZE;
+
+	debug("write_block(%d): writing block to disk offset %d...", 
+		blk->blk_nr, disk_offset);
+	
+	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
+		/* seek failed */
+		panic("write_block(%d): unable to seek to disk offset %d", 
+			blk->blk_nr, disk_offset);
+	}
+
+	if(write(fd, blk->blk_data, BLOCK_SIZE) != BLOCK_SIZE) {
+		panic("write_block(%d): unable to write all block data",
+			blk->blk_nr);
+	}
+	
 	blk->blk_dirty = FALSE;
 }
 
+/**
+ * Reads a data block from the device previously opened by open_blk_device(...)
+ * and copies it over to the data section of the given minix_block struct. The
+ * block read is set in blk->blk_nr.
+ *
+ * Failure to read the block will result in an error message and the program
+ * terminating.
+ */ 
 void read_block(struct minix_block *blk)
 {
-	debug("read_block(%d): reading block from disk...", blk->blk_nr);
+	int disk_offset = blk->blk_nr * BLOCK_SIZE;
 
-	// blk->data = ?
+	debug("read_block(%d): reading block from disk offset %d...", 
+		blk->blk_nr, disk_offset);
+
+	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
+		panic("read_block(%d): unable to seek to disk offset %d",
+			blk->blk_nr, disk_offset);
+	}
+
+	if(read(fd, blk->blk_data, BLOCK_SIZE) != BLOCK_SIZE) {
+		panic("read_block(%d): unable to read all block data",
+			blk->blk_nr);
+	}
+
 	blk->blk_dirty = FALSE;
 }
 				
