@@ -1,0 +1,9 @@
+1) 	so part of dissertation is walk through of what I did. Shall I talk about how
+	implemented minix then went back and had to change things to implement a
+	buffer cache?
+2)	So next up is modifying the buffer cache to not just write dirty blocks
+	when it finds them but to instead push them to a secondary buffer and
+	when that buffer hits 128K then block remapping code executes and all
+	data gets flushed at once.
+3)	Then it is possible this will cause write amplification so we try a FAT
+	table.
