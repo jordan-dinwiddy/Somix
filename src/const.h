@@ -1,3 +1,6 @@
+#ifndef _MINIX_CONST
+#define _MINIX_CONST
+
 /* minix magic numbers */
 #define MINIX_SUPER_MAGIC    0x137F	/* original minix fs */
 #define MINIX_SUPER_MAGIC2   0x138F	/* minix fs, 30 char names */
@@ -5,8 +8,11 @@
 #define MINIX2_SUPER_MAGIC2  0x2478	/* minix V2 fs, 30 char names */
 
 #define BLOCK_SIZE 1024			/* bytes per block */
+#define INODE_SIZE \
+	sizeof(struct minix_inode_disk) /* size of minix inode */
 #define NO_ZONE 0                       /* an empty inode zone entry */
 #define NO_BLOCK 0			/* indicates an empty block */
+#define NO_INODE 0			/* indicates no inode entry */
 #define DENTRY_SIZE 32                  /* bytes per directory entry */
 
 #define NR_ZONE_NUMS 9                  /* zone entries per inode */
@@ -38,3 +44,11 @@
 #define NR_BUF_HASH 128		/* size of buffer hash table. power of 2 */
 #define BLOCK_ALIGN 1024	/* the alignment of the address for the data 
 				 * portion of a minix_block */
+
+#define SUPER_BLOCK_NR 1	/* block containing super block */
+
+#define FILENAME_SIZE 32	/* max length of file name */
+
+#define ROOT_INODE (inode_nr) 1 /* number of root inode */
+
+#endif

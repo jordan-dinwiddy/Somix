@@ -1,3 +1,6 @@
+#ifndef _MINIX_CACHE
+#define _MINIX_CACHE
+
 /**
  * Implements the buffer cache used to reduce the number of disk accesses. The
  * cache will also hopefully aid in other optimisations such as copy-on-write
@@ -48,19 +51,13 @@ void open_blk_device(const char *d);
  */
 void init_cache(void);
 
-/**
- * Create a new empty block with the data portion set to BLOCK_SIZE bytes and
- * correctly aligned for O_DIRECT I/O.
- */
-struct minix_block *mk_block(void);
 
 struct minix_block *get_block(int blk_nr, char do_read);
 void put_block(struct minix_block *blk, int block_type);
 
 /* disk I/O */
-void write_block(struct minix_block *blk);
-void read_block(struct minix_block *blk);
 int sync_cache(void);
 
 void print_cache(void);
-void print_cache_block(struct minix_block *blk);
+
+#endif

@@ -23,6 +23,111 @@ struct minix_block
 int bufs_in_use = 0;			/* number of buffers in use */
 int fd;					/* I/O device file descriptor */
 
+
+/**
+ * Create a new empty block with the data portion set to BLOCK_SIZE bytes
+ * and correctly aligned for O_DIRECT I/O.
+ */
+static struct minix_block *mk_block(void)
+{
+	struct minix_block *blk = (struct minix_block *) 
+		malloc(sizeof(struct minix_block));
+	if(blk == NULL)
+		panic("mk_block(): unable to malloc new block");
+
+	blk->blk_nr = NO_BLOCK;
+	blk->blk_next = NIL_BUF;
+	blk->blk_prev = NIL_BUF;
+	blk->blk_hash = NIL_BUF;
+	blk->blk_dirty = FALSE;
+	blk->blk_count = 0;
+
+	/* allocate BLOCK_SIZE bytes for data region of our block. this region
+ 	 * must be mem aligned when using direct I/O (via the O_DIRECT flag)
+ 	 * with our device. we do this to bypass the linux buffer cache. */
+	if(posix_memalign((void **) &blk->blk_data, BLOCK_ALIGN, 
+		BLOCK_SIZE) != 0) 
+		panic("mk_block(): unable to posix_memalign data region of "
+			"new block");
+
+	/* everything constructed okay, return our new block */
+	return blk;
+}
+
+/**
+ * Writes the given block to the device previously opened by
+ * open_blk_device(...).
+ *
+ * Failure to write the block will result in an error message and the program
+ * terminating.
+ */
+static void write_block(struct minix_block *blk)
+{
+	int disk_offset = blk->blk_nr * BLOCK_SIZE;
+
+	debug("write_block(%d): writing block to disk offset %d...", 
+		blk->blk_nr, disk_offset);
+	
+	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
+		/* seek failed */
+		panic("write_block(%d): unable to seek to disk offset %d", 
+			blk->blk_nr, disk_offset);
+	}
+
+	if(write(fd, blk->blk_data, BLOCK_SIZE) != BLOCK_SIZE) {
+		panic("write_block(%d): unable to write all block data",
+			blk->blk_nr);
+	}
+	
+	blk->blk_dirty = FALSE;
+}
+
+/**
+ * Reads a data block from the device previously opened by open_blk_device(...)
+ * and copies it over to the data section of the given minix_block struct. The
+ * block read is set in blk->blk_nr.
+ *
+ * Failure to read the block will result in an error message and the program
+ * terminating.
+ */ 
+static void read_block(struct minix_block *blk)
+{
+	int disk_offset = blk->blk_nr * BLOCK_SIZE;
+
+	debug("read_block(%d): reading block from disk offset %d...", 
+		blk->blk_nr, disk_offset);
+
+	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
+		panic("read_block(%d): unable to seek to disk offset %d",
+			blk->blk_nr, disk_offset);
+	}
+	if(read(fd, blk->blk_data, BLOCK_SIZE) != BLOCK_SIZE) {
+		panic("read_block(%d): unable to read all block data",
+			blk->blk_nr);
+	}
+	blk->blk_dirty = FALSE;
+}
+
+static void print_cache_block(struct minix_block *blk)
+{
+	printf("  blk_nr: %d\n", blk->blk_nr);
+	printf("  blk_dirty: %s\n", blk->blk_dirty == TRUE ? "true" : "false");
+	printf("  blk_data: %p\n", blk->blk_data);
+}
+						
+void print_cache(void)
+{
+	struct minix_block *blk;
+	blk = front;
+	int i = 0;
+
+	while(blk != NIL_BUF) {
+		printf("Cache Block %d:\n", i++);
+		print_cache_block(blk);
+		blk = blk->blk_next;
+	}
+}
+
 /**
  * Opens the block device on which the cache will operate.
  *
@@ -40,6 +145,7 @@ void open_blk_device(const char *d)
 		/* problem with opening device */
 		panic("open_device(\"%s\"): unable to open device", d);
 	}
+	debug("open_device(\"%s\"): successfully opened device", d);
 }
 
 /**
@@ -93,7 +199,8 @@ int sync_cache(void)
 	int flush_count = 0;
 	blk = front;
 	while(blk != NIL_BUF) {
-		if(blk->blk_dirty == TRUE && blk->blk_count == 0) {
+		//if(blk->blk_dirty == TRUE && blk->blk_count == 0) {
+		if(blk->blk_dirty == TRUE) {
 			/* found block that is dirty and not in use so flush it
 			 * to disk. */
 			debug("sync_cache(): flushing block %d...", 
@@ -194,7 +301,7 @@ struct minix_block *get_block(int blk_nr, char do_read)
 	cache_hash[blk_nr & (NR_BUF_HASH - 1)] = blk;
 
 	/* read the block in from disk if necessary. it won't always be
-	 * necessary if the routing calling get_block expects to re-write the 
+	 * necessary if the routine calling get_block expects to re-write the 
 	 * entire block anyway. */
 	if(do_read == TRUE) read_block(blk);
 
@@ -285,113 +392,7 @@ void put_block(struct minix_block *blk, int block_type)
 	}
 
 }
-		
-/**
- * Writes the given block to the device previously opened by
- * open_blk_device(...).
- *
- * Failure to write the block will result in an error message and the program
- * terminating.
- */
-void write_block(struct minix_block *blk)
-{
-	int disk_offset = blk->blk_nr * BLOCK_SIZE;
 
-	debug("write_block(%d): writing block to disk offset %d...", 
-		blk->blk_nr, disk_offset);
-	
-	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
-		/* seek failed */
-		panic("write_block(%d): unable to seek to disk offset %d", 
-			blk->blk_nr, disk_offset);
-	}
-
-	if(write(fd, blk->blk_data, BLOCK_SIZE) != BLOCK_SIZE) {
-		panic("write_block(%d): unable to write all block data",
-			blk->blk_nr);
-	}
-	
-	blk->blk_dirty = FALSE;
-}
-
-/**
- * Reads a data block from the device previously opened by open_blk_device(...)
- * and copies it over to the data section of the given minix_block struct. The
- * block read is set in blk->blk_nr.
- *
- * Failure to read the block will result in an error message and the program
- * terminating.
- */ 
-void read_block(struct minix_block *blk)
-{
-	int disk_offset = blk->blk_nr * BLOCK_SIZE;
-
-	debug("read_block(%d): reading block from disk offset %d...", 
-		blk->blk_nr, disk_offset);
-
-	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
-		panic("read_block(%d): unable to seek to disk offset %d",
-			blk->blk_nr, disk_offset);
-	}
-
-	if(read(fd, blk->blk_data, BLOCK_SIZE) != BLOCK_SIZE) {
-		panic("read_block(%d): unable to read all block data",
-			blk->blk_nr);
-	}
-
-	blk->blk_dirty = FALSE;
-}
-				
-void print_cache(void)
-{
-	struct minix_block *blk;
-	blk = front;
-	int i = 0;
-
-	while(blk != NIL_BUF) {
-		printf("Cache Block %d:\n", i++);
-		print_cache_block(blk);
-		blk = blk->blk_next;
-	}
-}
-
-void print_cache_block(struct minix_block *blk)
-{
-	printf("  blk_nr: %d\n", blk->blk_nr);
-	printf("  blk_dirty: %s\n", blk->blk_dirty == TRUE ? "true" : "false");
-	printf("  blk_data: %p\n", blk->blk_data);
-}
-
-
-/**
- * Create a new empty block with the data portion set to BLOCK_SIZE bytes
- * and correctly aligned for O_DIRECT I/O.
- */
-struct minix_block *mk_block(void)
-{
-	struct minix_block *blk = (struct minix_block *) 
-		malloc(sizeof(struct minix_block));
-	if(blk == NULL)
-		panic("mk_block(): unable to malloc new block");
-
-	blk->blk_nr = NO_BLOCK;
-	blk->blk_next = NIL_BUF;
-	blk->blk_prev = NIL_BUF;
-	blk->blk_hash = NIL_BUF;
-	blk->blk_dirty = FALSE;
-	blk->blk_count = 0;
-
-	/* allocate BLOCK_SIZE bytes for data region of our block. this region
- 	 * must be mem aligned when using direct I/O (via the O_DIRECT flag)
- 	 * with our device. we do this to bypass the linux buffer cache. */
-	if(posix_memalign((void **) &blk->blk_data, BLOCK_ALIGN, 
-		BLOCK_SIZE) != 0) 
-		panic("mk_block(): unable to posix_memalign data region of "
-			"new block");
-
-	/* everything constructed okay, return our new block */
-	return blk;
-}
 
 	
 
