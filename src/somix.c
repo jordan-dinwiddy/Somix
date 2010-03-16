@@ -44,7 +44,8 @@ static int somix_getattr(const char *path, struct stat *stbuf)
 		debug("getattr(\"%s\", ...): cannot find item", path);
 		return -ENOENT;
 	}
-
+	debug("filling in and returning...");
+	debug("mode=%d nlink=%d size=%d...", inode->i_mode, inode->i_nlinks, inode->i_size);
 	stbuf->st_mode = inode->i_mode;
 	stbuf->st_nlink = inode->i_nlinks;
 	stbuf->st_size = inode->i_size;
@@ -91,6 +92,7 @@ static int somix_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int somix_open(const char *path, struct fuse_file_info *fi)
 {
 	struct minix_inode *inode;
+	debug("open...");
 
 	if((inode = resolve_path(sb.root_inode, path, 
 		PATH_RESOLVE_ALL)) == NULL) {

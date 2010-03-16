@@ -123,7 +123,7 @@ struct minix_inode *resolve_path(struct minix_inode *inode, const char *path,
 	debug("resolve_path(inode %d, \"%s\", %d): resolving %d'th "
 		"component...", inode->i_num, path, n, n);
 
-	while(path_get_nth_cmpo(path, file, i)) {
+	while(n != 0 && path_get_nth_cmpo(path, file, i)) {
 		debug("resolv_path(...): looking up component \"%s\" in "
 			"inode %d...", file, inode->i_num);
 		i_num = dir_search(inode, file);
@@ -139,9 +139,8 @@ struct minix_inode *resolve_path(struct minix_inode *inode, const char *path,
 		/* only put inodes we got ourselves */
 		if(i++ > 0) put_inode(inode); 	
 		inode = get_inode(i_num);
-		
-		/* if we've looked up as far as n'th component */
-		if(--n == 0) break;
+
+		n--;			
 	}
 	
 	if(n > 0) {
@@ -152,5 +151,6 @@ struct minix_inode *resolve_path(struct minix_inode *inode, const char *path,
 		inode = NULL;
 	}
 
+	debug("returning inode %d", inode->i_num);
 	return inode;
 }

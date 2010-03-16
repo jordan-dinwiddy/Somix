@@ -8,6 +8,7 @@
 #include "const.h"
 #include "cache.h"
 #include "inode.h"
+#include "read.h"
 #include "write.h"
 
 extern struct minix_super_block sb;
@@ -51,34 +52,64 @@ static int dir_add(struct minix_inode *p_dir, const char *filename,
   		 * hold our extra data. */
 		debug("dir_add(%d, \"%s\", %d): no free slots in directory. "
 			"extending...", p_dir->i_num, filename, i_num);
-		
-		if((block = new_block(dir, dir->i_size)) == NULL)
+		if(block != NULL) put_block(block, DIR_BLOCK);	
+		if((block = new_block(p_dir, p_dir->i_size)) == NULL)
 			panic("dir_add(...): unable to extend directory");
 		
 		dentry_inode_nr = (inode_nr *) (block->blk_data);
 		dentry_name = block->blk_data + 2;
 	}
 
-	*dentry_inode_nr = inode_num;
+	*dentry_inode_nr = i_num;
 	memset(dentry_name, 0x00, 30);
 	strncpy(dentry_name, filename, 30);
-	printf("minix_dentry_add(): Successfully inserted directory entry\n");
+	block->blk_dirty = TRUE;	/* we just modified data in block */
+
+	debug("dir_add(): Successfully inserted directory entry");
 
 	if(new_slots > existing_slots) {
-		printf("minix_dentry_add(): increasing directory size from %d "
-			"to %d\n", dir->i_size, new_slots * DENTRY_SIZE);
-		dir->i_size = DENTRY_SIZE * new_slots;
+		debug("dir_add(): increasing directory size from %d "
+			"to %d", p_dir->i_size, new_slots * DENTRY_SIZE);
+		p_dir->i_size = DENTRY_SIZE * new_slots;
+		p_dir->i_dirty = TRUE;
 	}
 	else {
-		printf("* new_slots=%d existing_slots=%d\n", new_slots, existing_slots);
+		debug("* new_slots=%d existing_slots=%d", new_slots, existing_slots);
 	}
 	/* need to flush the block that was modified and the inode */
-	put_inode(dir);
-	put_block(block);
+	put_block(block, DIR_BLOCK);
 	return 1;
 }
 
+/**
+* Init's a newly created directory by adding . and .. entries to it.
+*
+* Returns 1 on success, 0 otherwise.
+*/
+static int init_dir(struct minix_inode *i, struct minix_inode *p_dir)
+{
+	debug("init_dir(%d, %d): initing directory...", i->i_num,
+		p_dir->i_num);
+ 
+	dir_add(i, ".", i->i_num);
+	dir_add(i, "..", p_dir->i_num);
 
+	debug("init_dir(%d, %d): init complete. 2 entries added.", i->i_num,
+		p_dir->i_num); 
+
+	return 1;
+}
+
+/**
+ * Fills the data part of the given block with zero's and marks as dirty.
+ */
+static int zero_block(struct minix_block *blk)
+{
+	memset(blk->blk_data, 0x00, BLOCK_SIZE);
+	blk->blk_dirty = TRUE;
+
+	return 1;
+}
 
 /**
  * Allocates a new zone/block for use.
@@ -141,7 +172,8 @@ int write_map(struct minix_inode *inode, int pos, zone_nr new_zone)
 			*dbl_zp = alloc_zone(inode->i_zone[0]);
 			if(*dbl_zp == NO_ZONE)
 				return -ENOSPC;		/* out of space */
-
+			
+			inode->i_dirty = TRUE;		/* modified inode */	
 			new_dbl = TRUE;
 		}
 
@@ -165,7 +197,10 @@ int write_map(struct minix_inode *inode, int pos, zone_nr new_zone)
 		 * numbers. */
 		*zp = alloc_zone(inode->i_zone[0]);
 
+		/* mark either the inode or the double indirect block as
+ 		 * dirty. */
 		if(blk != NULL) blk->blk_dirty = TRUE;
+		else inode->i_dirty = TRUE;
 		if(*zp == NO_ZONE) {
 			if(blk != NULL) put_block(blk, INDIRECT_BLOCK);
 			return -ENOSPC;		/* out of space */
@@ -173,11 +208,13 @@ int write_map(struct minix_inode *inode, int pos, zone_nr new_zone)
 		new_ind = TRUE;		/* we're creating a new indirect block */
 		
 	}
-	put_block(blk, INDIRECT_BLOCK);		/* release dbl ind mappings,
-						 * block may be dirty. */
+	
+	/* if we got a double indirect mapping release it now */
+	if(blk != NULL) put_block(blk, INDIRECT_BLOCK);
 
-	/* zp points to the indirect block.
- 	 * TODO: can we be sure zp is still there? we've already called 
+	/* zp points to the indirect block which is either in inode or in double
+	 * indirect block that we just release. */
+ 	/* TODO: can we be sure zp is still there? we've already called 
  	 * put_block(). */
 	blk = get_block(*zp, new_ind == TRUE ? FALSE : TRUE);
 	if(new_ind == TRUE) zero_block(blk);
@@ -192,7 +229,6 @@ int write_map(struct minix_inode *inode, int pos, zone_nr new_zone)
 	/* its up to the calling routing to put the inode */
 	return 1;
 }
-
 
 
 /**
@@ -278,6 +314,7 @@ struct minix_block *new_block(struct minix_inode *inode, int pos)
 	return retval;
 }
 
+#ifdef _MINIX_WRITE_FUNCS
 /**
  * Writes 'size' bytes from 'buf' to data contents of inode 'inode' starting at
  * 'offset'.
@@ -380,4 +417,4 @@ int write_chunk(struct minix_inode *inode, int pos, int chunk,
 	put_block(blk, DATA_BLOCK);
 	return 1;
 }
-
+#endif

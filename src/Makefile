@@ -40,11 +40,11 @@ test_resolv_path : test_resolv_path.c comms.o bitmap.o mount.o cache.o \
 	$(CC) -Wall test_resolv_path.c comms.o bitmap.o mount.o cache.o \
 		inode.o path.o read.o -o test_resolv_path
 
-somix : somix.c comms.o bitmap.o mount.o cache.o inode.o path.o read.o
+somix : somix.c comms.o bitmap.o mount.o cache.o inode.o path.o read.o write.o
 	$(CC) -Wall -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse \
 		-pthread -L/usr/local/lib -lfuse -lrt -ldl \
 		 somix.c comms.o bitmap.o mount.o cache.o inode.o path.o \
-		read.o -o somix
+		read.o write.o -o somix
 
 path.o : path.c path.h types.h const.h inode.h read.h comms.h
 	$(CC) -Wall -c path.c
@@ -54,6 +54,9 @@ inode.o : inode.c inode.h superblock.h comms.h
 
 read.o : read.c read.h types.h const.h cache.h inode.h comms.h
 	$(CC) -Wall -c read.c
+
+write.o : write.c types.h superblock.h comms.h const.h cache.h inode.h write.h
+	$(CC) -Wall -c write.c
 
 comms.o : comms.c comms.h
 	$(CC) -Wall -c comms.c
