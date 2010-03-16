@@ -2,6 +2,7 @@
 #define _MINIX_INODE
 
 #include "types.h"
+#include "const.h"
 
 /**
  * Minix inode as it appears on disk.
@@ -31,8 +32,10 @@ struct minix_inode {
 	/* in memory only fields */
 	inode_nr i_num;			/* inode number */
 	char i_dirty;			/* whether inode has been modified */
+	int i_count;			/* # of users of inode */
 };
 
+struct minix_inode inode_table[NR_INODES];
 
 struct minix_inode *get_inode(inode_nr i_num);
 void put_inode(struct minix_inode *inode);

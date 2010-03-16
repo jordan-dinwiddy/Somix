@@ -50,5 +50,9 @@
 #define FILENAME_SIZE 32	/* max length of file name */
 
 #define ROOT_INODE (inode_nr) 1 /* number of root inode */
+#define NR_INODES 32		/* size of inode table */
+
+#define READ 1			
+#define WRITE 2
 
 #endif

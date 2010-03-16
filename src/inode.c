@@ -7,6 +7,7 @@
 #include "cache.h"
 #include "superblock.h"
 #include "inode.h"
+#include "const.h"
 
 extern struct minix_super_block sb;
 
@@ -45,55 +46,94 @@ static struct minix_inode *mk_inode(inode_nr i_num)
 	return inode;
 }
 
+/**
+ * Read or write the given inode to it's disk block. 
+ *
+ * rw_flag set to READ to read
+ * rw_flag set to WRITE to write
+ */
+static void rw_inode(struct minix_inode *i, int rw_flag)
+{
+	int i_block;		/* block inode is in */
+	int i_block_offset;	/* byte offset of inode in block */
+	struct minix_block *blk;/* blk containing inode */
+
+	i_block = 2 + sb.s_imap_blocks + sb.s_zmap_blocks;
+	i_block += ((i->i_num - 1) * INODE_SIZE) / BLOCK_SIZE;
+	i_block_offset = ((i->i_num - 1) * INODE_SIZE) % BLOCK_SIZE;
+
+	debug("read_inode(%d): reading inode from block %d offset %d...", 
+		i->i_num, i_block, i_block_offset);
+
+	blk = get_block(i_block, TRUE);
+
+	if(rw_flag == READ) {
+		memcpy((void *)i, (void *) (blk->blk_data + i_block_offset), 
+			INODE_SIZE);
+	}
+	else {
+		memcpy((void *) (blk->blk_data + i_block_offset), (void *) i,
+			INODE_SIZE);
+		blk->blk_dirty = TRUE;
+	}
+
+	put_block(blk, INODE_BLOCK);
+	i->i_dirty = FALSE;
+}
+
+
 struct minix_inode *get_inode(inode_nr i_num)
 {
-	int i_block;		/* block inode is located in */
-	int i_block_offset;	/* byte offset of inode in this block */
-	struct minix_block *blk;
-	struct minix_inode *inode;
+	struct minix_inode *i, *free_slot;
+	free_slot = NO_INODE;
 
-	/* calculate disk block and offset inode is located at */
-	i_block = 2 + sb.s_imap_blocks + sb.s_zmap_blocks;
-	i_block += ((i_num - 1) * INODE_SIZE) / BLOCK_SIZE;
-	i_block_offset = ((i_num - 1) * INODE_SIZE) % BLOCK_SIZE;
+	for(i = &inode_table[0]; i < &inode_table[NR_INODES]; i++) {
+		if(i->i_count > 0) {
+			if(i->i_num == i_num) {
+				debug("get_inode(%d): found in inode table",
+					i_num);
+				/* found our inode */
+				i->i_count++;
+				return i;
+			}
+		}
+		else {
+			/* inode slot is free, remember for later */
+			free_slot = i;
+		}
+	}
 
-	debug("get_inode(%d): retrieving inode from block %d at offset %d...", 
-		i_num, i_block, i_block_offset);
-	blk = get_block(i_block, TRUE);		/* retrieve block from disk */
+	if(free_slot == NO_INODE)
+		panic("get_inode(%d): no free slots in inode table to read in "
+			"read in inode", i_num);
 
-	/* copy inode from the cache. TODO: this is not ideal. maybe implement
-	 * seperate inode cache to remove need for memcpy. */
-	inode = mk_inode(i_num);
-	memcpy(inode, blk->blk_data + i_block_offset, INODE_SIZE);
-	put_block(blk, INODE_BLOCK); 
-	
-	return inode;
+	debug("get_inode(%d): reading inode from disk. storing in table entry "
+		"at %p", i_num, free_slot);
+
+	free_slot->i_num = i_num;
+	free_slot->i_count = 1;
+	rw_inode(free_slot, READ);
+	return free_slot;
 }
-
+	
 void put_inode(struct minix_inode *inode)
 {
-	int i_block;	
-	int i_block_offset;
-	struct minix_block *blk;
+	inode->i_count--;
+	if(inode->i_count == 0) {
+		/* no one is using inode, we can free it now */
+		if(inode->i_dirty == TRUE) {
+			debug("put_inode(%d): inode is dirty. writing...",
+				inode->i_num);
+			 rw_inode(inode, WRITE);
+		}
+			debug("put_inode(%d): inode isn't dirty. no need to "
+				"write", inode->i_num);
 
-	/* if inode has been modified we'll have to write to disk */
-	if(inode->i_dirty == TRUE) {
-		i_block = 2 + sb.s_imap_blocks + sb.s_zmap_blocks;
-		i_block += ((inode->i_num - 1) * INODE_SIZE) / BLOCK_SIZE;
-		i_block_offset = ((inode->i_num - 1) * INODE_SIZE) % 
-			BLOCK_SIZE;
-
-		debug("put_inode(%d): putting inode to block %d at offset "
-			"%d...", inode->i_num, i_block, i_block_offset);
-		blk = get_block(i_block, TRUE);		
-		memcpy(blk->blk_data + i_block_offset, inode, INODE_SIZE);
-		blk->blk_dirty = TRUE;		/* mark inode block as dirty*/
-		put_block(blk, INODE_BLOCK);
 	}
 	
-	debug("put_inode(%d): freeing inode...", inode->i_num);
-	free(inode);
+	// else inode is still in use
 }
+
 
 struct minix_inode *alloc_inode(void)
 {
@@ -106,8 +146,11 @@ struct minix_inode *alloc_inode(void)
 	if(i_num < 0) 
 		panic("alloc_inode(): no free inodes available");
 
-	inode = mk_inode(i_num);
-
+	inode = get_inode(i_num);
+	wipe_inode(inode);
+	inode->i_num = i_num;
+	inode->i_dirty = FALSE;
+	
 	return inode;
 }
 

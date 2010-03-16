@@ -157,9 +157,15 @@ int somix_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	
 	new_i = new_node(p_dir, filename, mode);
 
-	put_inode(p_dir);
+	/* nasty hack until we implement inode cache.
+ 	 * it's possible that resolve_path will return the same
+ 	 * inode we give it (sb.root_inode) if we resolve the path /
+ 	 */
+	if(p_dir != sb.root_inode)
+		put_inode(p_dir);
 
 	fi->fh = (unsigned long) new_i;
+	debug("create(...): complete");
 	return 0;
 }
 
