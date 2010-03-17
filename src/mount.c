@@ -148,6 +148,8 @@ void minix_unmount(void)
 	/* TODO: write superblock */
 	debug("minix_unmount(): unloading superblock...");
 	/* TODO: put_root inode */
+	debug("minix_unmount(): saving root inode...");
+	put_inode(sb.root_inode);
 	debug("minix_unmount(): syncing with disk...");
 	sync_cache();
 }

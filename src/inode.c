@@ -119,6 +119,8 @@ struct minix_inode *get_inode(inode_nr i_num)
 void put_inode(struct minix_inode *inode)
 {
 	inode->i_count--;
+	if(inode->i_count < 0) panic("put_inode(%d): i_count decremeted to "
+		"%d!", inode->i_num, inode->i_count);
 	if(inode->i_count == 0) {
 		/* no one is using inode, we can free it now */
 		if(inode->i_dirty == TRUE) {
@@ -126,9 +128,14 @@ void put_inode(struct minix_inode *inode)
 				inode->i_num);
 			 rw_inode(inode, WRITE);
 		}
+		else {
 			debug("put_inode(%d): inode isn't dirty. no need to "
 				"write", inode->i_num);
-
+		}
+	}
+	else {
+		debug("put_inode(%d): inode still in use. i_count=%d",
+			inode->i_num, inode->i_count);
 	}
 	
 	// else inode is still in use

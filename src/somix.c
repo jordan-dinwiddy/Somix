@@ -55,6 +55,8 @@ static int somix_getattr(const char *path, struct stat *stbuf)
 	stbuf->st_mtime = inode->i_time;
 	stbuf->st_ctime = inode->i_time;
 	
+	if(inode != sb.root_inode)
+		put_inode(inode);
 	return res;
 }
 
@@ -169,6 +171,14 @@ int somix_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	return 0;
 }
 
+void somix_destroy(void * v)
+{
+	/* flush everything */
+	debug("somix_destroy(): unmounting...");
+	minix_unmount();
+	debug("somix_destory(): finished");
+}
+
 static struct fuse_operations somix_oper = {
 /* we do the job of .init in main since we want to exit gracefully if anything
  * goes wrong during init. */
@@ -179,6 +189,7 @@ static struct fuse_operations somix_oper = {
 	.release	= somix_release,
 	.read		= somix_read,
 	.create		= somix_create,
+	.destroy	= somix_destroy,
 /*
 	.opendir	= minix_open,
 	.mkdir		= minix_mkdir,
