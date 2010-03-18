@@ -7,3 +7,37 @@
 	data gets flushed at once.
 3)	Then it is possible this will cause write amplification so we try a FAT
 	table.
+4)	But a FAT is no more compact!!! the indirect blocks are likely to be
+	reasonably contiguous anyway so see no advantage of FAT table.
+5) 	So what should I do? My one big idea has been flawed so don't really see
+	point in implementing it because it's obvious it wont work.
+	OPTIONS:
+		a) Implement Iota's copy-on-write method. It was never completed
+		   and therefore never tested. No proof yet. Unlikely that 
+		   128 touches will need to be made.
+		b) Just implement a series of the other smaller optimisations. 
+		   BUT none of these result in such big perform increases.
+		   Instead 
+			- storage improvements by reducing size of inodes.
+			- integrity of FS vs less frequent touch ups. E.g bmaps
+			- place inodes next to blocks. likely inode update
+			  results in block update therefore should have in same
+			  erase block. ONLY work for small files < 128K
+				PROBLEM - waste of a block!
+			- first 32 bytes of file data could be inode contents.
+			  in which case dir entry is a block pointer.
+				- means less disk accesses? not a problem
+				- less write amp. inode and data guaranteed
+				 close together for small blocks
+				- less erase cycles = longer disk life
+			- block size = page size. 
+			- Implement support for TRIM command - I dont have 
+			  cabable SSD though for testing. 
+			- remove optimisations in minix geared towards getting
+			  contiguous blocks
+
+6)	Testing??
+7)	So it may be safer to go with the simpler options NOT necessarily that i
+	know they will work performance wise but because I can see the bounds on
+	amount of work to be done. with the fat system looks a bit hard and
+	worried i might run out of time. What do you suggest??
