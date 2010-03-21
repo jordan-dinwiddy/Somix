@@ -78,7 +78,8 @@ static int somix_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			i_num = (inode_nr *) (blk->blk_data + i);
 			if(*i_num == NO_INODE) 
 				continue;	/* ignore these entries */
-
+			debug("somix_readdir(): adding \"%s\" to filler", 
+				blk->blk_data+i+2);
 			filler(buf, blk->blk_data + i + 2, NULL, 0);
 			/* ignoring inode for the moment */
 		}
@@ -86,36 +87,37 @@ static int somix_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		c_pos += BLOCK_SIZE;
 	}
 
-
+	debug("readdir(): finished");
 	return 0;
 }
 
 static int somix_open(const char *path, struct fuse_file_info *fi)
 {
 	struct minix_inode *inode;
-	debug("open(\"%s\", ...", path);
-
+	debug("open(\"%s\")", path);
+	if((struct minix_inode *)fi->fh != NULL)
+		panic("strange");
+	print_inode_table();
 	if((inode = resolve_path(sb.root_inode, path, 
 		PATH_RESOLVE_ALL)) == NULL) {
 		return -ENOENT;
 	}
 
 	if(inode->i_num == ROOT_INODE) {
-		debug("somix_open(): detected root inode, putting back and "
-			"returning existing handle...");
 		put_inode(inode);
 		inode = sb.root_inode;
 	}
 
 	/* set file handle to point to inode */
 	fi->fh = (unsigned long) inode;
-
 	return 0;
 }
 
 int somix_release(const char *path, struct fuse_file_info *fi)
 {
 	struct minix_inode *inode = (struct minix_inode *) fi->fh;
+
+	debug("release(\"%s\")", path);
 
 	if(inode == NULL) {
 		debug("release(\"%s\", ...): cannot release. "
@@ -124,7 +126,6 @@ int somix_release(const char *path, struct fuse_file_info *fi)
 	}
 
 	put_inode(inode);
-	debug("release(\"%s\", ...): inode released", path);
 
 	return 0;
 }
@@ -228,7 +229,31 @@ static int somix_unlink(const char *path)
 	return 0;
 }
 
+static int somix_mkdir(const char *path, mode_t mode)
+{
+	struct minix_inode *i;
+	struct minix_inode *new_i;
 
+	char filename[FILENAME_SIZE];
+
+	debug("somix_mkdir(\"%s\", %d): creating directory...", path, mode);
+	mode += S_IFDIR;
+
+	i = last_dir(path, filename);
+	if(i == NULL) {
+		debug("somix_mkdir(\"%s\", ...): connot find parent directory",
+			path);
+		return -ENOENT;
+	}
+	
+	new_i = new_node(i, filename, mode);
+
+	put_inode(i);
+	put_inode(new_i);
+	debug("somix_mkdir(): complete");
+	return 0;
+}
+	
 static struct fuse_operations somix_oper = {
 /* we do the job of .init in main since we want to exit gracefully if anything
  * goes wrong during init. */
@@ -243,6 +268,7 @@ static struct fuse_operations somix_oper = {
 	.write		= somix_write,
 	.truncate	= somix_truncate,
 	.unlink		= somix_unlink,
+	.mkdir		= somix_mkdir,
 /*
 	.opendir	= minix_open,
 	.mkdir		= minix_mkdir,

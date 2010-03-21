@@ -42,5 +42,6 @@ void put_inode(struct minix_inode *inode);
 struct minix_inode *alloc_inode(void);
 void free_inode(inode_nr i_num);
 void inode_print(struct minix_inode *inode);
+void print_inode_table(void);
 
 #endif

@@ -22,7 +22,7 @@ static int dir_add(struct minix_inode *p_dir, const char *filename,
 {
 	int b;
 	int c_pos = 0;
-	struct minix_block *block;
+	struct minix_block *block = NULL;
 	int i;
 	int found_slot = 0;
 	char *dentry_name;
@@ -30,6 +30,8 @@ static int dir_add(struct minix_inode *p_dir, const char *filename,
 
 	int existing_slots = p_dir->i_size / DENTRY_SIZE;
 	int new_slots = 1;
+
+	debug("dir_add(%d, \"%s\", %d):", p_dir->i_num, filename, i_num);
 
 	while((b = read_map(p_dir, c_pos)) != NO_ZONE) {
 		block = get_block(b, TRUE);
@@ -52,17 +54,19 @@ static int dir_add(struct minix_inode *p_dir, const char *filename,
   		 * hold our extra data. */
 		debug("dir_add(%d, \"%s\", %d): no free slots in directory. "
 			"extending...", p_dir->i_num, filename, i_num);
+		debug("foo");
 		if(block != NULL) put_block(block, DIR_BLOCK);	
+		debug("poo");
 		if((block = new_block(p_dir, p_dir->i_size)) == NULL)
 			panic("dir_add(...): unable to extend directory");
-		
+			
 		dentry_inode_nr = (inode_nr *) (block->blk_data);
 		dentry_name = block->blk_data + 2;
 	}
 
 	*dentry_inode_nr = i_num;
-	memset(dentry_name, 0x00, 30);
-	strncpy(dentry_name, filename, 30);
+	memset(dentry_name, 0x00, FILENAME_SIZE);
+	strncpy(dentry_name, filename, FILENAME_SIZE);
 	block->blk_dirty = TRUE;	/* we just modified data in block */
 
 	debug("dir_add(): Successfully inserted directory entry");
@@ -294,7 +298,7 @@ struct minix_block *new_block(struct minix_inode *inode, int pos)
 	zone_nr z, near_z;
 	struct minix_block *retval;
 	char new_zone = FALSE;
-
+	debug("new_block()");
 	if((z = read_map(inode, pos)) == 0) {
 		/* no block currently allocated for this byte offset */
 		if(inode->i_size == 0) 
@@ -321,6 +325,8 @@ struct minix_block *new_block(struct minix_inode *inode, int pos)
  	 * we just need to zero it. */
 	retval = get_block(z, FALSE);
 	zero_block(retval); 
+	debug("new_block(%d, %d): allocated and returning new block %d",
+		inode->i_num, pos, z);
 	return retval;
 }
 

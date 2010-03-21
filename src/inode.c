@@ -118,7 +118,16 @@ struct minix_inode *get_inode(inode_nr i_num)
 		free_slot->i_count);
 	return free_slot;
 }
-	
+
+void print_inode_table(void)
+{
+	struct minix_inode *i;
+	for(i = &inode_table[0]; i < &inode_table[NR_INODES]; i++) {
+		printf("    inode %d: count=%d, dirty = %s xxyyzz\n", i->i_num, 
+			i->i_count, i->i_dirty == TRUE ? "Yes" : "No");
+	}
+}
+
 void put_inode(struct minix_inode *inode)
 {
 	inode->i_count--;
@@ -176,7 +185,7 @@ struct minix_inode *alloc_inode(void)
 	inode = get_inode(i_num);
 	wipe_inode(inode);
 	inode->i_num = i_num;
-	inode->i_dirty = FALSE;
+	inode->i_dirty = TRUE;
 	
 	return inode;
 }

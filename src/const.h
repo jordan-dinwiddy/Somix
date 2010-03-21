@@ -47,7 +47,7 @@
 
 #define SUPER_BLOCK_NR 1	/* block containing super block */
 
-#define FILENAME_SIZE 32	/* max length of file name */
+#define FILENAME_SIZE 30	/* max length of file name */
 
 #define ROOT_INODE (inode_nr) 1 /* number of root inode */
 #define NR_INODES 32		/* size of inode table */

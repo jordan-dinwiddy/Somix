@@ -31,6 +31,8 @@ inode_nr dir_search(struct minix_inode *inode, const char *file)
 			if(strcmp((char *)(blk->blk_data + i + 2), file) == 0) {
 				retval = *((inode_nr *)(blk->blk_data + i));
 				put_block(blk, DIR_BLOCK);
+				debug("dir_search(): found \"%s\" at ix=%d", 
+					file, i);
 				return retval;
 			}
 		}

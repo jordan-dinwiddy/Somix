@@ -116,6 +116,7 @@ int path_get_last_cmpo(const char *path, char *buf)
  *
  * Returns the inode if the path is valid, NULL otherwise.
  */
+#ifdef _FOO
 struct minix_inode *resolve_path(struct minix_inode *inode, const char *path, 
 	int n)
 {
@@ -160,7 +161,51 @@ struct minix_inode *resolve_path(struct minix_inode *inode, const char *path,
 	debug("returning inode %d", inode->i_num);
 	return inode;
 }
+#endif
 
+struct minix_inode *resolve_path(struct minix_inode *root, const char *path, 
+	int levels)
+{
+	char file[FILENAME_SIZE];
+	int i;
+	struct minix_inode *inode;
+	inode_nr i_num;
+
+	if(levels == PATH_RESOLVE_ALL)
+		levels = path_cnt_cmpos(path);
+
+	/* NOTE: caller must always be free to put the inode we return */
+	if(levels == 0)
+		return get_inode(root->i_num);
+
+	/* load a copy of root inode to start with */
+	inode = get_inode(root->i_num);
+
+	for(i = 0; i < levels; i++) {
+		if(!path_get_nth_cmpo(path, file, i)) {
+			/* couldn't get component, shouldn't happen since we
+			 * counted components first. */
+			panic("resolve_path(): couldn't get component %d", i);
+		}
+
+		i_num = dir_search(inode, file);
+		if(i_num == NO_INODE) {
+			debug("resolve_path(): failed to lookup \"%s\" in "
+				"inode %d", file, inode->i_num);
+			put_inode(inode);
+			return NULL;
+		}
+
+		put_inode(inode);
+		inode = get_inode(i_num);
+	}
+
+	debug("resolve_path(): finished resolving path, returning inode %d",
+		inode->i_num);
+	return inode;
+}
+		
+	
 /**
  * Returns the inode corresponding to the final directory in the given path.
  * Also returns the final component of the path in 'buf'.
