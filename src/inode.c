@@ -128,6 +128,25 @@ void print_inode_table(void)
 	}
 }
 
+void flush_inode_table(void)
+{
+	struct minix_inode *i;
+	for(i = &inode_table[0]; i < &inode_table[NR_INODES]; i++) {
+		if(i->i_dirty == TRUE) {
+			debug("flush_inode_table(): inode %d is dirty " 
+				"i_count=%d, flushing...", i->i_num, i->i_count);
+			if(i->i_nlinks == 0) {
+				debug("flush_inode_table(): freeing inode %d",
+					i->i_num);
+				truncate(i);
+				free_inode(i->i_num);
+			}
+			rw_inode(i, WRITE);
+		}
+	}
+}
+			
+
 void put_inode(struct minix_inode *inode)
 {
 	inode->i_count--;

@@ -142,14 +142,18 @@ void minix_mount(const char *device_name)
 
 void minix_unmount(void)
 {
+	debug("minix_unmount(): saving root inode...");
+	put_inode(sb.root_inode);
+
+	debug("minix_unmount(): flushing inode table...");
+	flush_inode_table();
+
 	debug("minix_unmount(): unloading bitmaps...");
 	unload_bitmaps();
 
 	/* TODO: write superblock */
-	debug("minix_unmount(): unloading superblock...");
-	/* TODO: put_root inode */
-	debug("minix_unmount(): saving root inode...");
-	put_inode(sb.root_inode);
+	//debug("minix_unmount(): unloading superblock...");
+	
 	debug("minix_unmount(): syncing with disk...");
 	sync_cache();
 }
