@@ -120,5 +120,6 @@ void free_bit(struct generic_bitmap *bitmap, int bit_num)
 	}
 
 	clrbit(bitmap->blocks[block]->blk_data, block_bit);
+	bitmap->blocks[block]->blk_dirty = TRUE;
 }
 
