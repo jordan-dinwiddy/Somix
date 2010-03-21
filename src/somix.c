@@ -140,6 +140,21 @@ static int somix_read(const char *path, char *buf, size_t size, off_t offset,
 	return minix_read(inode, buf, size, offset);
 }
 
+static int somix_write(const char *path, const char *buf, size_t size, 
+	off_t offset, struct fuse_file_info *fi)
+{
+	struct minix_inode *inode = (struct minix_inode *) fi->fh;
+
+	if(inode == NULL) 
+		panic("write(): called but no inode available");
+
+	debug("write(\"%s\", %p, %d, %d, %d): writing...",
+		path, buf, (int) size, (int) offset, inode->i_num);
+
+	return write_buf(inode, buf, size, offset);
+}
+
+
 int somix_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
 	debug("create(\"%s\", ...):", path);
@@ -179,6 +194,27 @@ void somix_destroy(void * v)
 	debug("somix_destory(): finished");
 }
 
+static int somix_truncate(const char *path, off_t offset)
+{
+	struct minix_inode *i;
+	debug("somix_truncate(\"%s\", %d) truncating...",
+		path, (int) offset);
+
+	i = resolve_path(sb.root_inode, path, PATH_RESOLVE_ALL);
+	if(i == NULL)
+		panic("truncate(\"%s\", %d): cannot resolve path",
+			path, (int) offset);
+
+	truncate(i);
+
+	if(i != sb.root_inode)
+		put_inode(i);
+
+	return 0;
+}
+	
+
+
 static struct fuse_operations somix_oper = {
 /* we do the job of .init in main since we want to exit gracefully if anything
  * goes wrong during init. */
@@ -190,10 +226,11 @@ static struct fuse_operations somix_oper = {
 	.read		= somix_read,
 	.create		= somix_create,
 	.destroy	= somix_destroy,
+	.write		= somix_write,
+	.truncate	= somix_truncate,
 /*
 	.opendir	= minix_open,
 	.mkdir		= minix_mkdir,
-	.write		= minix_write,
 	.create		= minix_create,
 	.setxattr	= minix_setxattr,
 	.getxattr	= minix_getxattr,

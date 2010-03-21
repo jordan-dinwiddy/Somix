@@ -142,6 +142,12 @@ void put_inode(struct minix_inode *inode)
 }
 
 
+/**
+ * Attempts to allocate an inode from the inode bitmap starting at the first
+ * bit (inode 1).
+ * If an inode can be allocated it is loaded into the inode table, wiped,
+ * initialised (set inode number) and returned. 
+ */
 struct minix_inode *alloc_inode(void)
 {
 	struct minix_inode *inode;	

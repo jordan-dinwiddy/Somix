@@ -131,6 +131,16 @@ zone_nr alloc_zone(zone_nr near_zone)
 	return z;
 }
 
+void free_zone(zone_nr z)
+{
+	int bit = z - (sb.s_firstdatazone - 1);
+
+	if(z == NO_ZONE) return;
+	
+	debug("free_zone(%d): freeing bit %d...", (int) z, bit);
+	free_bit(sb.zmap, bit);
+}	
+	
 /**
  * Write a new zone into an inode.
  *
@@ -292,7 +302,7 @@ struct minix_block *new_block(struct minix_inode *inode, int pos)
 		else
 			near_z = inode->i_zone[0];
 
-		z = alloc_zone(z);
+		z = alloc_zone(near_z);
 		new_zone = TRUE;
 
 		/* attempt to write the new zone number to the inode. This
@@ -309,66 +319,9 @@ struct minix_block *new_block(struct minix_inode *inode, int pos)
 
 	/* if we allocated a new block then we don't need to read from disk, we
  	 * we just need to zero it. */
-	retval = get_block(z, new_zone == TRUE ? FALSE : TRUE);
-	if(new_zone == TRUE) zero_block(retval); 
+	retval = get_block(z, FALSE);
+	zero_block(retval); 
 	return retval;
-}
-
-#ifdef _MINIX_WRITE_FUNCS
-/**
- * Writes 'size' bytes from 'buf' to data contents of inode 'inode' starting at
- * 'offset'.
- */
-int write_buf(struct minix_inode *inode, const char *buf, size_t size, off_t offset)
-{
-	int nbytes = size;	/* number of bytes left to write */
-	int off;		/* offset within a particular zone */
-	int chunk;		/* the number of bytes we are writing to a 
-				 * particular zone. */
-	int pos = offset;	/* where we are writing current chunk to
-				 * relative to a files data. */
-	int so_far = 0;		/* bytes written so far */
-	int ret;		
-
-	debug("minix_write_buf(inode=%d, %p, %d, %d):\n", inode->i_num, buf, 
-		(int)size, (int)offset);
-
-	/* operation not permitted - writing 0 bytes */
-	if(size == 0) return -EPERM;
-
-	if(offset > sb.s_max_size - size)
-		return -EFBIG;	/* cannot grow file over max file size */
-
-	while(nbytes > 0) {
-		off = pos % BLOCK_SIZE;
-		
-		/* the number of bytes we're gonna write to the zone */
-		chunk = MIN(nbytes, (BLOCK_SIZE - off));
-
-		/* write 'chunk' bytes to the inode. starting at file position=
-		 * 'pos' from the buffer starting at 'buf+so_far' */
-		ret = write_chunk(inode, pos, chunk, buf+so_far);
-		
-		if(ret < 0) {
-			debug("minix_write_buf(...): something when wrong while"
-				" writing chunk %d\n", chunk);
-			return ret;
-		}
-
-		nbytes -= chunk;	/* we have chunk bytes less to write */
-		pos += chunk;		/* we've advanced by chunk bytes */
-		so_far += chunk;	/* keep count of how much written */
-	}
-
-	/* if we've increased the file size then update inode */
-	if(pos > inode->i_size)
-		inode->i_size = pos;
-
-	/* update mod time */
-	inode->i_time = time(NULL);
-	inode->i_dirty = TRUE;	
-	
-	return so_far;
 }
 
 /**
@@ -378,7 +331,7 @@ int write_buf(struct minix_inode *inode, const char *buf, size_t size, off_t off
  * There 'chunk' is always <= BLOCK_SIZE.
  *
  */
-int write_chunk(struct minix_inode *inode, int pos, int chunk, 
+static int write_chunk(struct minix_inode *inode, int pos, int chunk, 
 	const char *buf)
 {
 	int zone = pos / BLOCK_SIZE;
@@ -386,20 +339,19 @@ int write_chunk(struct minix_inode *inode, int pos, int chunk,
 	int b_num = 0;
 	struct minix_block *blk;
 
-	debug("minix_write_chunk(inode=%d,%d,%d,%p): writing %d bytes from "
+	debug("write_chunk(inode=%d,%d,%d,%p): writing %d bytes from "
 		"buffer starting at %p to file offset %d (zone=%d, offset=%d)\n",
 		inode->i_num, pos, chunk, buf, chunk, buf, pos, zone, off);
 
 	/* lookup the block corresponding to file position 'pos' */
 	b_num = read_map(inode, pos);	
 
-	if(!b_num) {
+	if(b_num == NO_ZONE) {
 		/* the file does not have a block allocated for this position
 		 * yet. We should allocate one now. */
 		debug("minix_write_chunk(...): allocating new block for file "
 			"position=%d...\n", pos);
-		blk = new_block(inode, pos);	/* TODO: this should mark inode
-						 * as dirty since it modifies */
+		blk = new_block(inode, pos);	
 		if(blk == NULL) {
 			/* no more space */
 			return -ENOSPC;
@@ -413,8 +365,112 @@ int write_chunk(struct minix_inode *inode, int pos, int chunk,
 
 	/* cpy 'chunk' bytes to blk->data+off from 'buf' */
 	memcpy(blk->blk_data+off, buf, chunk);	
-
+	blk->blk_dirty = TRUE;
 	put_block(blk, DATA_BLOCK);
 	return 1;
 }
-#endif
+
+/**
+ * Writes 'size' bytes from 'buf' to data contents of inode 'inode' starting at
+ * 'offset'.
+ */
+int write_buf(struct minix_inode *inode, const char *buf, size_t size, off_t offset)
+{
+	int nbytes = size;	/* number of bytes left to write */
+	int off;		/* offset within a particular zone */
+	int chunk;		/* the number of bytes we are writing to a 
+				 * particular zone. */
+	int pos = offset;	/* where we are writing current chunk to
+				 * relative to a files data. */
+	int sbytes = 0;		/* bytes written so far */
+	int ret;		
+
+	debug("write_buf(inode=%d, %p, %d, %d):", inode->i_num, buf, 
+		(int)size, (int)offset);
+
+	/* operation not permitted - writing 0 bytes */
+	if(size == 0) return -EPERM;
+
+	if(offset > sb.s_max_size - size)
+		return -EFBIG;	/* cannot grow file over max file size */
+
+	while(nbytes > 0) {
+		off = pos % BLOCK_SIZE;
+		
+		/* the number of bytes we're gonna write to the zone */
+		chunk = MIN(nbytes, (BLOCK_SIZE - off));
+		if(chunk < 0)
+			panic("write_buf(%d, buf, %d, %d): why is chunk < 0?",
+				inode->i_num, (int) size, (int) offset);
+
+		/* write 'chunk' bytes to the inode. starting at file position=
+		 * 'pos' from the buffer starting at 'buf + sbytes' */
+		ret = write_chunk(inode, pos, chunk, buf + sbytes);
+		
+		if(ret < 0) {
+			debug("minix_write_buf(...): something when wrong while"
+				" writing chunk %d\n", chunk);
+			return ret;
+		}
+
+		nbytes -= chunk;	/* we have chunk bytes less to write */
+		pos += chunk;		/* we've advanced by chunk bytes */
+		sbytes += chunk;	/* keep count of how much written */
+	}
+
+	/* if we've increased the file size then update inode */
+	if(pos > inode->i_size) {
+		inode->i_size = pos;
+	}
+
+	/* update mod time */
+	inode->i_time = time(NULL);
+	inode->i_dirty = TRUE;	
+	
+	return sbytes;
+}
+
+/**
+ * Truncate the size of the given inode to zero by removing all blocks 
+ * allocated to it and then setting size to 0.
+ *
+ * NOTE: updates i_time of inode.
+ */
+void truncate(struct minix_inode *inode)
+{
+	int pos;
+	zone_nr dbl_z, *iz;
+	struct minix_block *blk;
+	int i;
+	zone_nr z;
+
+	debug("truncate(%d): truncating to 0 bytes...", inode->i_num);
+	
+	/* free all allocated blocks */
+	for(pos = 0; pos < inode->i_size; pos += BLOCK_SIZE) {
+		if((z = read_map(inode, pos)) != NO_ZONE) 
+			free_zone(z);
+	}
+
+	/* free indirect */
+	free_zone(inode->i_zone[NR_DZONE_NUM]);
+
+	/* free double indirect */
+	if((dbl_z = inode->i_zone[NR_DZONE_NUM + 1]) != NO_ZONE) {
+		blk = get_block(dbl_z, TRUE);
+		for(iz = (zone_nr *) blk->blk_data; 
+			iz < (zone_nr *) &blk->blk_data[NR_INDIRECTS]; iz++) {
+			free_zone(*iz);
+		}
+		put_block(blk, INDIRECT_BLOCK);
+		free_zone(dbl_z);
+	}
+
+	inode->i_size = 0;
+	inode->i_time = time(NULL);
+	inode->i_dirty = TRUE;
+	for(i = 0; i < NR_ZONE_NUMS; i++)
+		inode->i_zone[i] = NO_ZONE;
+}
+					
+	
