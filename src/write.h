@@ -11,3 +11,5 @@ struct minix_inode *new_node(struct minix_inode *parent, const char *filename,
 struct minix_block *new_block(struct minix_inode *inode, int pos);
 int write_buf(struct minix_inode *inode, const char *buf, size_t size, 
 	off_t offset);
+int dir_delete(struct minix_inode *p_dir, const char *filename);
+int unlink(const char *path);

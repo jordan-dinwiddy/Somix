@@ -14,13 +14,16 @@
  * If the file is found it's inode number is returned, otherwise NO_INODE is
  * returned.
  */
-inode_nr dir_search(struct minix_inode *inode, char *file)
+inode_nr dir_search(struct minix_inode *inode, const char *file)
 {
 	struct minix_block *blk;	/* block belonging to inode */
 	zone_nr z;			
 	int c_pos = 0;		/* current position in scan of directory */
 	int i;			/* current position in directory block */
 	inode_nr retval;
+
+	debug("dir_search(%d, \"%s\"): searching...", inode->i_num,
+		file);
 	while((z = read_map(inode, c_pos)) != NO_ZONE) {
 		blk = get_block(z, TRUE);
 		/* TODO: fix bug. shouldn't use BLOCK_SIZE */
@@ -36,6 +39,8 @@ inode_nr dir_search(struct minix_inode *inode, char *file)
 	}
 
 	/* couldn't find directory entry */
+	debug("dir_search(%d, \"%s\"): couldn't find entry", inode->i_num, 
+		file);
 	return NO_INODE;
 }
 

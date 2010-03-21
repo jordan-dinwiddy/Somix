@@ -93,11 +93,18 @@ static int somix_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int somix_open(const char *path, struct fuse_file_info *fi)
 {
 	struct minix_inode *inode;
-	debug("open...");
+	debug("open(\"%s\", ...", path);
 
 	if((inode = resolve_path(sb.root_inode, path, 
 		PATH_RESOLVE_ALL)) == NULL) {
 		return -ENOENT;
+	}
+
+	if(inode->i_num == ROOT_INODE) {
+		debug("somix_open(): detected root inode, putting back and "
+			"returning existing handle...");
+		put_inode(inode);
+		inode = sb.root_inode;
 	}
 
 	/* set file handle to point to inode */
@@ -209,7 +216,17 @@ static int somix_truncate(const char *path, off_t offset)
 
 	return 0;
 }
-	
+
+static int somix_unlink(const char *path)
+{
+	debug("somix_unlink(\"%s\")", path);
+
+	if(!unlink(path))
+		return -EIO;	/* TODO: return correct error */
+
+	debug("somix_unlink(\"%s\"): complete", path);
+	return 0;
+}
 
 
 static struct fuse_operations somix_oper = {
@@ -225,6 +242,7 @@ static struct fuse_operations somix_oper = {
 	.destroy	= somix_destroy,
 	.write		= somix_write,
 	.truncate	= somix_truncate,
+	.unlink		= somix_unlink,
 /*
 	.opendir	= minix_open,
 	.mkdir		= minix_mkdir,

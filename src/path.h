@@ -10,5 +10,6 @@
 int path_get_last_cmpo(const char *path, char *buf);
 int path_cnt_cmpos(const char *path);
 struct minix_inode *resolve_path(struct minix_inode *inode, const char *path, int n);
-
+struct minix_inode *advance(struct minix_inode *p_dir, const char *filename);
+struct minix_inode *last_dir(const char *path, char *buf);
 #endif

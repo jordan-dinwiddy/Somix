@@ -4,7 +4,10 @@
 #include "inode.h"
 #include "read.h"
 #include "comms.h"
+#include "superblock.h"
 #include "path.h"
+
+extern struct minix_super_block sb;
 
 /**
  * Copies the n'th component of the given 'path' to buf. The component will be
@@ -158,3 +161,46 @@ struct minix_inode *resolve_path(struct minix_inode *inode, const char *path,
 	return inode;
 }
 
+/**
+ * Returns the inode corresponding to the final directory in the given path.
+ * Also returns the final component of the path in 'buf'.
+ * return NULL if error
+ */
+struct minix_inode *last_dir(const char *path, char *buf)
+{
+	int n = path_cnt_cmpos(path);
+	struct minix_inode *p_dir;
+
+	if(path_get_last_cmpo(path, buf) == 0) 
+		return NULL;	/* 0 components in path = no file specified */
+
+	p_dir = resolve_path(sb.root_inode, path, n - 1);
+
+	return p_dir;
+}
+
+
+/**
+ * looks up the given file ine parent direct, opens the inode and returns it.
+ *
+ * if file cannot be found in directory specified returns NULL.
+ */
+struct minix_inode *advance(struct minix_inode *p_dir, const char *filename)
+{	
+	inode_nr i_num;
+	struct minix_inode *retval;
+
+	debug("advance(%d, \"%s\"):", p_dir->i_num, filename);
+
+	if((i_num = dir_search(p_dir, filename)) == NO_INODE) {
+		debug("advance(%d, \"%s\"): couldn't find file in directory",
+			p_dir->i_num, filename);
+		return NULL;
+	}
+
+	retval = get_inode(i_num);
+	
+	return retval;
+}
+
+	

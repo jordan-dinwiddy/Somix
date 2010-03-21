@@ -9,8 +9,8 @@
 #include "cache.h"
 #include "inode.h"
 #include "read.h"
+#include "path.h"
 #include "write.h"
-
 extern struct minix_super_block sb;
 
 /**
@@ -136,8 +136,8 @@ void free_zone(zone_nr z)
 	int bit = z - (sb.s_firstdatazone - 1);
 
 	if(z == NO_ZONE) return;
-	
-	debug("free_zone(%d): freeing bit %d...", (int) z, bit);
+	debug("free_zone(%d): freeing zone %d (bit %d)...", 
+		(int) z, (int) z, bit);	
 	free_bit(sb.zmap, bit);
 }	
 	
@@ -472,5 +472,87 @@ void truncate(struct minix_inode *inode)
 	for(i = 0; i < NR_ZONE_NUMS; i++)
 		inode->i_zone[i] = NO_ZONE;
 }
-					
+
+/**
+ * delete the directory entry 'filename' from the directory 'p_dir' by setting
+ * corresponding inode_num entry to zero.
+ *
+ * if 'filename' cannot be found in directory, 0 is returned. 
+ * retval 1 indicates success.
+ */
+int dir_delete(struct minix_inode *p_dir, const char *file)
+{
+	struct minix_block *blk;	/* block belonging to inode */
+	zone_nr z;			
+	int c_pos = 0;		/* current position in scan of directory */
+	int i;			/* current position in directory block */
+	
+	debug("dir_delete(%d, \"%s\"):", p_dir->i_num, file);
+
+	while((z = read_map(p_dir, c_pos)) != NO_ZONE) {
+		blk = get_block(z, TRUE);
+		/* TODO: fix bug. shouldn't use BLOCK_SIZE */
+		for(i = 0; i < BLOCK_SIZE; i+= DENTRY_SIZE) {
+			if(strcmp((char *)(blk->blk_data + i + 2), file) == 0) {
+				/* found what we were looking for */
+				debug("dir_delete(%d, \"%s\"): found entry, "
+					"deleting...", p_dir->i_num, file);
+				*((inode_nr *)(blk->blk_data + i)) = NO_INODE;	/* erase */
+				blk->blk_dirty = TRUE;
+				p_dir->i_time = time(NULL);
+				p_dir->i_dirty = TRUE;	
+				put_block(blk, DIR_BLOCK);
+				return 1;	/* success */
+			}
+		}
+		put_block(blk, DIR_BLOCK);
+		c_pos += BLOCK_SIZE;
+	}
+
+	/* couldn't find directory entry */
+	return 0;
+}
+
+
+/**
+ * Perform the unlink operation.
+ *
+ * return 1 on success, 0 otherwise.
+ */
+int unlink(const char *path)
+{
+	struct minix_inode *p_dir;
+	struct minix_inode *i;
+	char filename[FILENAME_SIZE];
+
+	debug("unlink(\"%s\"): unlinking...", path);
+
+	if((p_dir = last_dir(path, filename)) == NULL)
+		panic("unlink(\"%s\"): failed to resolve final dir in path", 
+			path);
+
+	debug("unlink(\"%s\"): got parent directory inode %d. file to "
+		"unlink=\"%s\"", path, p_dir->i_num, filename);
+
+	if((i = advance(p_dir, filename)) == NULL) {
+		put_inode(p_dir);
+		panic("unlink(\"%s\"): failed to resolve final component", 
+			path);
+	}
+
+	debug("unlink(\"%s\"): decrementing nlinks and marking inode as dirty",
+		path)
+
+	dir_delete(p_dir, filename);
+
+	i->i_nlinks--;
+	i->i_dirty = TRUE;
+
+	put_inode(i);
+	put_inode(p_dir);
+	return 1;
+}
+	
+						
+
 	

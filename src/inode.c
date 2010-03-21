@@ -6,8 +6,9 @@
 #include "comms.h"
 #include "cache.h"
 #include "superblock.h"
-#include "inode.h"
 #include "const.h"
+#include "write.h"
+#include "inode.h"
 
 extern struct minix_super_block sb;
 
@@ -62,7 +63,7 @@ static void rw_inode(struct minix_inode *i, int rw_flag)
 	i_block += ((i->i_num - 1) * INODE_SIZE) / BLOCK_SIZE;
 	i_block_offset = ((i->i_num - 1) * INODE_SIZE) % BLOCK_SIZE;
 
-	debug("read_inode(%d): reading inode from block %d offset %d...", 
+	debug("rw_inode(%d): read/writing inode from block %d offset %d...", 
 		i->i_num, i_block, i_block_offset);
 
 	blk = get_block(i_block, TRUE);
@@ -113,16 +114,29 @@ struct minix_inode *get_inode(inode_nr i_num)
 	free_slot->i_num = i_num;
 	free_slot->i_count = 1;
 	rw_inode(free_slot, READ);
+	debug("get_inode(%d): inode read. i_count=%d", i_num, 
+		free_slot->i_count);
 	return free_slot;
 }
 	
 void put_inode(struct minix_inode *inode)
 {
 	inode->i_count--;
-	if(inode->i_count < 0) panic("put_inode(%d): i_count decremeted to "
-		"%d!", inode->i_num, inode->i_count);
+	if(inode->i_count < 0) {
+		panic("put_inode(%d): i_count decremeted to %d!", 
+			inode->i_num, inode->i_count);
+	}
+
 	if(inode->i_count == 0) {
 		/* no one is using inode, we can free it now */
+		if(inode->i_nlinks == 0) {
+			debug("put_inode(%d): nlinks==0, freeing inode...",
+				inode->i_num);
+
+			truncate(inode);	/* this will mark inode dirty */
+			free_inode(inode->i_num);
+		}
+
 		if(inode->i_dirty == TRUE) {
 			debug("put_inode(%d): inode is dirty. writing...",
 				inode->i_num);
@@ -137,7 +151,7 @@ void put_inode(struct minix_inode *inode)
 		debug("put_inode(%d): inode still in use. i_count=%d",
 			inode->i_num, inode->i_count);
 	}
-	
+	debug("put_inode(): finished");
 	// else inode is still in use
 }
 
@@ -167,6 +181,16 @@ struct minix_inode *alloc_inode(void)
 	return inode;
 }
 
+/**
+ * Free's the given inode by update the inode bitmap.
+ */
+void free_inode(inode_nr i_num)
+{
+	debug("free_inode(%d): freeing inode...", i_num);
+
+	free_bit(sb.imap, (int) i_num);
+}
+	
 void inode_print(struct minix_inode *inode)
 {
 	int i; 
