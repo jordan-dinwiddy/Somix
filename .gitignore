@@ -3,3 +3,9 @@
 
 # All object files
 *.o
+
+# somix executable
+somix
+
+# test image
+*.IMG
