@@ -147,10 +147,14 @@ struct minix_inode *resolve_path(struct minix_inode *inode, const char *path,
 		/* we ran out of components before getting to n'th */
 		debug("resolv_path(...): not enough components in path to "
 			"return n'th");
-		put_inode(inode);
+		if(i > 0) put_inode(inode);
 		inode = NULL;
 	}
+
+	/* so the caller is free to put the inode they resolved */
+	if(i == 0) inode = get_inode(inode->i_num);
 
 	debug("returning inode %d", inode->i_num);
 	return inode;
 }
+

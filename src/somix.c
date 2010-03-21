@@ -55,8 +55,7 @@ static int somix_getattr(const char *path, struct stat *stbuf)
 	stbuf->st_mtime = inode->i_time;
 	stbuf->st_ctime = inode->i_time;
 	
-	if(inode != sb.root_inode)
-		put_inode(inode);
+	put_inode(inode);
 	return res;
 }
 
@@ -178,8 +177,7 @@ int somix_create(const char *path, mode_t mode, struct fuse_file_info *fi)
  	 * it's possible that resolve_path will return the same
  	 * inode we give it (sb.root_inode) if we resolve the path /
  	 */
-	if(p_dir != sb.root_inode)
-		put_inode(p_dir);
+	put_inode(p_dir);
 
 	fi->fh = (unsigned long) new_i;
 	debug("create(...): complete");
@@ -207,8 +205,7 @@ static int somix_truncate(const char *path, off_t offset)
 
 	truncate(i);
 
-	if(i != sb.root_inode)
-		put_inode(i);
+	put_inode(i);
 
 	return 0;
 }
