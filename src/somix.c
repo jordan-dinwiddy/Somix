@@ -97,7 +97,6 @@ static int somix_open(const char *path, struct fuse_file_info *fi)
 	debug("open(\"%s\")", path);
 	if((struct minix_inode *)fi->fh != NULL)
 		panic("strange");
-	print_inode_table();
 	if((inode = resolve_path(sb.root_inode, path, 
 		PATH_RESOLVE_ALL)) == NULL) {
 		return -ENOENT;

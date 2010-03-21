@@ -54,9 +54,7 @@ static int dir_add(struct minix_inode *p_dir, const char *filename,
   		 * hold our extra data. */
 		debug("dir_add(%d, \"%s\", %d): no free slots in directory. "
 			"extending...", p_dir->i_num, filename, i_num);
-		debug("foo");
 		if(block != NULL) put_block(block, DIR_BLOCK);	
-		debug("poo");
 		if((block = new_block(p_dir, p_dir->i_size)) == NULL)
 			panic("dir_add(...): unable to extend directory");
 			
