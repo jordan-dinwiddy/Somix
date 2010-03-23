@@ -65,8 +65,8 @@ static void write_block(struct minix_block *blk)
 {
 	int disk_offset = blk->blk_nr * BLOCK_SIZE;
 
-	debug("write_block(%d): writing block to disk offset %d...", 
-		blk->blk_nr, disk_offset);
+	info("write_block(%d): writing block %d to disk offset %d...", 
+		blk->blk_nr, blk->blk_nr, disk_offset);
 	
 	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
 		/* seek failed */
@@ -94,8 +94,8 @@ static void read_block(struct minix_block *blk)
 {
 	int disk_offset = blk->blk_nr * BLOCK_SIZE;
 
-	debug("read_block(%d): reading block from disk offset %d...", 
-		blk->blk_nr, disk_offset);
+	info("read_block(%d): reading block %d from disk offset %d...", 
+		blk->blk_nr, blk->blk_nr, disk_offset);
 
 	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
 		panic("read_block(%d): unable to seek to disk offset %d",
@@ -318,8 +318,8 @@ void put_block(struct minix_block *blk, int block_type)
 	}
 
 	if(blk->blk_count == 0) 
-		panic("put_block(): attempting to put block that is not in "
-			"use");
+		panic("put_block(%d): attempting to put block that is not in "
+			"use", blk->blk_nr);
 
 	blk->blk_count--;
 	if(blk->blk_count > 0) {
