@@ -1,39 +1,12 @@
 objects = minix_fuse.o minix_fuse_lib.o
 CC = gcc
 
-all : mf tool_print_bitmap tool_print_block tool_print_inode \
-	tool_print_superblock
+all : somix tests
+
+tests: test_cache test_resolv_path 
 	
-mf : minix_fuse_lib.o minix_fuse.o
-	$(CC) -o mf -Wall -pthread -L/usr/local/lib -lfuse -lrt -ldl \
-		$(objects)
-
-tool_print_bitmap : minix_fuse_lib.o minix_fuse_lib.h tool_print_bitmap.c
-	$(CC) minix_fuse_lib.o tool_print_bitmap.c -o tool_print_bitmap
-
-tool_print_block : minix_fuse_lib.o minix_fuse_lib.h tool_print_block.c
-	$(CC) minix_fuse_lib.o tool_print_block.c -o tool_print_block
-
-tool_print_inode : minix_fuse_lib.o minix_fuse_lib.h tool_print_inode.c
-	$(CC) minix_fuse_lib.o tool_print_inode.c -o tool_print_inode
-
-tool_print_superblock : minix_fuse_lib.o minix_fuse_lib.h \
-	tool_print_superblock.c
-	$(CC) minix_fuse_lib.o tool_print_superblock.c -o \
-		tool_print_superblock
-
-minix_fuse.o : minix_fuse_lib.h minix_fuse.c
-	$(CC) -Wall -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse \
-		-c minix_fuse.c
-
-minix_fuse_lib.o : minix_fuse_lib.h minix_fuse_lib.c
-	$(CC) -Wall -c minix_fuse_lib.c
-
-cache_test : cache_test.c cache.o comms.o const.h
-	$(CC) -Wall cache_test.c cache.o comms.o -o cache_test
-
-test_mount : test_mount.c mount.o cache.o comms.o bitmap.o
-	$(CC) -Wall test_mount.c mount.o cache.o comms.o bitmap.o -o test_mount
+test_cache : test_cache.c cache.o comms.o const.h
+	$(CC) -Wall test_cache.c cache.o comms.o -o test_cache
 
 test_resolv_path : test_resolv_path.c comms.o bitmap.o mount.o cache.o \
 		inode.o path.o read.o
@@ -74,5 +47,4 @@ error.o : comms.h comms.c
 	$(CC) -Wall -c comms.c
 
 clean :
-	rm *.o mf tool_print_bitmap tool_print_block tool_print_inode \
-		tool_print_superblock
+	rm *.o somix test_cache test_resolv_path

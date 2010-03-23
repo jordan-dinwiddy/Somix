@@ -9,3 +9,7 @@ somix
 
 # test image
 *.IMG
+
+# test executables
+test_cache
+test_resolv_path
