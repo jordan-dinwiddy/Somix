@@ -133,9 +133,11 @@ static int somix_read(const char *path, char *buf, size_t size, off_t offset,
 	struct fuse_file_info *fi)
 {
 	struct minix_inode *inode = (struct minix_inode *) fi->fh;
-
+	
+	info("somix_read(): reading bytes %d -> %d from file \"%s\"...",
+		(int) offset, (int) (offset + size), path);
 	if(inode == NULL) {
-		debug("read(\"%s\", ...): appear the specified file is not open",
+		panic("read(\"%s\", ...): appear the specified file is not open",
 			path);
 		return -EIO;	/* I/O error */
 	}
@@ -151,6 +153,8 @@ static int somix_write(const char *path, const char *buf, size_t size,
 {
 	struct minix_inode *inode = (struct minix_inode *) fi->fh;
 
+	info("somix_write(): writing bytes %d -> %d of file \"%s\"...",
+		(int) offset, (int) (offset + size), path);
 	if(inode == NULL) 
 		panic("write(): called but no inode available");
 
@@ -202,8 +206,8 @@ void somix_destroy(void * v)
 static int somix_truncate(const char *path, off_t offset)
 {
 	struct minix_inode *i;
-	debug("somix_truncate(\"%s\", %d) truncating...",
-		path, (int) offset);
+	info("somix_truncate(): truncating \"%s\" to %d bytes...", path, 
+		(int) offset);
 
 	i = resolve_path(sb.root_inode, path, PATH_RESOLVE_ALL);
 	if(i == NULL)
