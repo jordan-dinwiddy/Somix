@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define debug(format, args...) printf(format "\n", ##args);
@@ -9,6 +9,7 @@
 #endif
 
 
+#define info(format, args...) printf("INFO: "); printf(format "\n", ##args);
 /**
  * For fatal error messages issued.
  */
