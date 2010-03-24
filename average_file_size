@@ -1,0 +1,253 @@
+find / -type f -size -1k -printf %F"\n"
+
+
+All files
+find / -type f -fstype ext4 | wc -l
+= 206386
+
+0K files:
+find / -type f -size 0k -fstype ext4 -printf "%p - %s - %F\n" | wc -l
+= 3748 
+
+1-1024byte files:
+find / -type f -size +0c -size -1025c -fstype ext4 -printf "%p - %s - %F\n" | wc
+-l
+=50,446
+
+1025-2048 files:
+find / -type f -size +1024c -size -2049c -fstype ext4 -printf "%p - %s - %F\n" |
+wc -l
+= 23,839
+
+2049-3072
+find / -type f -size +2048c -size -3073c -fstype ext4 -printf "%p - %s - %F\n" |
+wc -l
+= 11,483
+
+3073-4096
+find / -type f -size +3072c -size -4097c -fstype ext4 -printf "%p - %s - %F\n" |
+wc -l
+= 6,933
+
+4097-5120
+find / -type f -size +4096c -size -5121c -fstype ext4 -printf "%p - %s - %F\n" |
+wc -l
+= 7474
+
+5121-6144
+find / -type f -size +5120c -size -6145c -fstype ext4 -printf "%p - %s - %F\n" |
+wc -l
+= 5079
+
+6145-7168
+find / -type f -size +6144c -size -7169c -fstype ext4 -printf "%p - %s - %F\n" |
+wc -l
+= 5140
+
+7169-8192
+find / -type f -size +7168c -size -8193c -fstype ext4 -printf "%p - %s - %F\n" |
+wc -l
+=4531
+
+
+8193-9216
+find / -type f -size +8192c -size -9217c -fstype ext4 -printf "%p - %s - %F\n" |
+wc -l
+= 5538
+
+9217-10240
+find / -type f -size +9216c -size -10241c -fstype ext4 -printf "%p - %s - %F\n"
+| wc -l
+= 4,798
+
+10241-11264
+ find / -type f -size +10240c -size -11265c -fstype ext4 -printf "%p - %s -
+%F\n" | wc -l
+4685
+
+11265-12288
+find / -type f -size +11264c -size -12289c -fstype ext4 -printf "%p - %s - %F\n"
+| wc -l
+=3185
+
+12289-13312
+find / -type f -size +12288c -size -13313c -fstype ext4 -printf "%p - %s - %F\n"
+| wc -l
+=2680
+
+13313-14336
+find / -type f -size +13312c -size -14337c -fstype ext4 -printf "%p - %s - %F\n"
+| wc -l
+=2244
+
+14337-15360
+find / -type f -size +14336c -size -15361c -fstype ext4 -printf "%p - %s -
+%F\n" | wc -l
+=2031
+
+15361-16384
+find / -type f -size +15360c -size -16385c -fstype ext4 -printf "%p - %s - %F\n"
+| wc -l
+=2312
+
+
+
+
+
+
+
+
+RAW OUTOUT:
+[root@linux01 jo]# find / -type f -size +0c -size -1025c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4684/task/4684/fd/5': No such file or directory
+find: `/proc/4684/task/4684/fdinfo/5': No such file or directory
+find: `/proc/4684/fd/5': No such file or directory
+find: `/proc/4684/fdinfo/5': No such file or directory
+50446
+[root@linux01 jo]# find / -type f -size +1024c -size -2049c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4690/task/4690/fd/5': No such file or directory
+find: `/proc/4690/task/4690/fdinfo/5': No such file or directory
+find: `/proc/4690/fd/5': No such file or directory
+find: `/proc/4690/fdinfo/5': No such file or directory
+23839
+[root@linux01 jo]# find / -type f -size +2048c -size -3073c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4700/task/4700/fd/5': No such file or directory
+find: `/proc/4700/task/4700/fdinfo/5': No such file or directory
+find: `/proc/4700/fd/5': No such file or directory
+find: `/proc/4700/fdinfo/5': No such file or directory
+11483
+[root@linux01 jo]# find / -type f -size +3072c -size -4097c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4706/task/4706/fd/5': No such file or directory
+find: `/proc/4706/task/4706/fdinfo/5': No such file or directory
+find: `/proc/4706/fd/5': No such file or directory
+find: `/proc/4706/fdinfo/5': No such file or directory
+6933
+[root@linux01 jo]# find / -type f -size +4096c -size -5121c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4711/task/4711/fd/5': No such file or directory
+find: `/proc/4711/task/4711/fdinfo/5': No such file or directory
+find: `/proc/4711/fd/5': No such file or directory
+find: `/proc/4711/fdinfo/5': No such file or directory
+7474
+[root@linux01 jo]# find / -type f -size +5120c -size -6145c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4717/task/4717/fd/5': No such file or directory
+find: `/proc/4717/task/4717/fdinfo/5': No such file or directory
+find: `/proc/4717/fd/5': No such file or directory
+find: `/proc/4717/fdinfo/5': No such file or directory
+5079
+[root@linux01 jo]# find / -type f -size +6144c -size -7169c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4723/task/4723/fd/5': No such file or directory
+find: `/proc/4723/task/4723/fdinfo/5': No such file or directory
+find: `/proc/4723/fd/5': No such file or directory
+find: `/proc/4723/fdinfo/5': No such file or directory
+5140
+[root@linux01 jo]# find / -type f -size +7168c -size -8193c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4729/task/4729/fd/5': No such file or directory
+find: `/proc/4729/task/4729/fdinfo/5': No such file or directory
+find: `/proc/4729/fd/5': No such file or directory
+find: `/proc/4729/fdinfo/5': No such file or directory
+4531
+[root@linux01 jo]# find / -type f -size +8192c -size -9217c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4735/task/4735/fd/5': No such file or directory
+find: `/proc/4735/task/4735/fdinfo/5': No such file or directory
+find: `/proc/4735/fd/5': No such file or directory
+find: `/proc/4735/fdinfo/5': No such file or directory
+5583
+[root@linux01 jo]# find / -type f -size +9216c -size -10241c -fstype ext4
+-printf "%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4741/task/4741/fd/5': No such file or directory
+find: `/proc/4741/task/4741/fdinfo/5': No such file or directory
+find: `/proc/4741/fd/5': No such file or directory
+find: `/proc/4741/fdinfo/5': No such file or directory
+4798
+[root@linux01 jo]# find / -type f -size +10240c -size -11265c -fstype ext4
+-printf "%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4747/task/4747/fd/5': No such file or directory
+find: `/proc/4747/task/4747/fdinfo/5': No such file or directory
+find: `/proc/4747/fd/5': No such file or directory
+find: `/proc/4747/fdinfo/5': No such file or directory
+4685
+[root@linux01 jo]# find / -type f -size +11264c -size -12289c -fstype ext4
+-printf "%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4753/task/4753/fd/5': No such file or directory
+find: `/proc/4753/task/4753/fdinfo/5': No such file or directory
+find: `/proc/4753/fd/5': No such file or directory
+find: `/proc/4753/fdinfo/5': No such file or directory
+3185
+[root@linux01 jo]# find / -type f -size +12288c -size -13313c -fstype ext4
+-printf "%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4759/task/4759/fd/5': No such file or directory
+find: `/proc/4759/task/4759/fdinfo/5': No such file or directory
+find: `/proc/4759/fd/5': No such file or directory
+find: `/proc/4759/fdinfo/5': No such file or directory
+2680
+[root@linux01 jo]# find / -type f -size +13312c -size -14337c -fstype ext4
+-printf "%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4788/task/4788/fd/5': No such file or directory
+find: `/proc/4788/task/4788/fdinfo/5': No such file or directory
+find: `/proc/4788/fd/5': No such file or directory
+find: `/proc/4788/fdinfo/5': No such file or directory
+2244
+[root@linux01 jo]# find / -type f -size +14336c -size -15361c -fstype ext4
+-printf "%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4796/task/4796/fd/5': No such file or directory
+find: `/proc/4796/task/4796/fdinfo/5': No such file or directory
+find: `/proc/4796/fd/5': No such file or directory
+find: `/proc/4796/fdinfo/5': No such file or directory
+2031
+[root@linux01 jo]# find / -type f -size +15360c -size -16385c -fstype ext4
+-printf "%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4802/task/4802/fd/5': No such file or directory
+find: `/proc/4802/task/4802/fdinfo/5': No such file or directory
+find: `/proc/4802/fd/5': No such file or directory
+find: `/proc/4802/fdinfo/5': No such file or directory
+2312
+[root@linux01 jo]# find / -type f -size +8192c -fstype ext4 -printf "%p - %s -
+%F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4915/task/4915/fd/5': No such file or directory
+find: `/proc/4915/task/4915/fdinfo/5': No such file or directory
+find: `/proc/4915/fd/5': No such file or directory
+find: `/proc/4915/fdinfo/5': No such file or directory
+87713
+[root@linux01 jo]# find / -type f -size +0c -size -1025c -fstype ext4 -printf
+"%p - %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4944/task/4944/fd/5': No such file or directory
+find: `/proc/4944/task/4944/fdinfo/5': No such file or directory
+find: `/proc/4944/fd/5': No such file or directory
+find: `/proc/4944/fdinfo/5': No such file or directory
+50447
+[root@linux01 jo]# find / -type f -size +0c -size -993c -fstype ext4 -printf "%p
+- %s - %F\n" | wc -l
+find: `/home/jo/.gvfs': Permission denied
+find: `/proc/4950/task/4950/fd/5': No such file or directory
+find: `/proc/4950/task/4950/fdinfo/5': No such file or directory
+find: `/proc/4950/fd/5': No such file or directory
+find: `/proc/4950/fdinfo/5': No such file or directory
+49297
+
