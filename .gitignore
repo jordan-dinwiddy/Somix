@@ -6,6 +6,7 @@
 
 # somix executable
 somix
+mkfs.somix
 
 # test image
 *.IMG
