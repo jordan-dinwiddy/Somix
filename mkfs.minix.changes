@@ -1,0 +1,19 @@
+mkfs.minix
+	- defined PACKAGE_STRING in .c file instead of ../config.h file
+	- included locale.h in .c file. required for def of LC_ALL when calling
+ 	  setlocale on line 621.
+	- removed all header files from include/ apart from nls.h which is the
+	  only header required by mkfs.minix.c
+
+mkfs.minix.c now compiles fine with:
+	- gcc  -I../include -fsigned-char -fomit-frame-pointer -c -O3 -o
+	  mkfs.minix.o mkfs.minix.c
+	- gcc -g -O3 -o mkfs.minix mkfs.minix.
+
+
+GCC options
+-O3 - most optimisations
+-g  - compile gdb info
+-c  - do not link
+-I  - extend header file from default search path of
+	"/usr/local/include;/usr/include" to that specified.

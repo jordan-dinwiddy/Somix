@@ -1,7 +1,7 @@
 objects = minix_fuse.o minix_fuse_lib.o
 CC = gcc
 
-all : somix tests
+all : somix mkfs.somix tests 
 
 tests: test_cache test_resolv_path 
 	
@@ -18,6 +18,10 @@ somix : somix.c comms.o bitmap.o mount.o cache.o inode.o path.o read.o write.o
 		-pthread -L/usr/local/lib -lfuse -lrt -ldl \
 		 somix.c comms.o bitmap.o mount.o cache.o inode.o path.o \
 		read.o write.o -o somix
+
+mkfs.somix : include/nls.h include/minix.h include/bitops.h mkfs.somix.c
+	$(CC) -Iinclude -fsigned-char -fomit-frame-pointer -O3 -o \
+		mkfs.somix mkfs.somix.c
 
 path.o : path.c path.h types.h const.h inode.h read.h comms.h
 	$(CC) -Wall -c path.c
@@ -47,4 +51,4 @@ error.o : comms.h comms.c
 	$(CC) -Wall -c comms.c
 
 clean :
-	rm *.o somix test_cache test_resolv_path
+	rm *.o somix test_cache test_resolv_path mkfs.somix
