@@ -64,8 +64,7 @@ static struct minix_block *mk_block(void)
 static void write_block(struct minix_block *blk)
 {
 	int disk_offset = blk->blk_nr * BLOCK_SIZE;
-
-	info("write_block(%d): writing block %d to disk offset %d...", 
+	info("\033[31mwrite_block(%d): writing block %d to disk offset %d...\033[0m", 
 		blk->blk_nr, blk->blk_nr, disk_offset);
 	
 	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
@@ -94,7 +93,7 @@ static void read_block(struct minix_block *blk)
 {
 	int disk_offset = blk->blk_nr * BLOCK_SIZE;
 
-	info("read_block(%d): reading block %d from disk offset %d...", 
+	info("\033[32mread_block(%d): reading block %d from disk offset %d...\033[0m", 
 		blk->blk_nr, blk->blk_nr, disk_offset);
 
 	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
