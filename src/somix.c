@@ -256,6 +256,35 @@ static int somix_mkdir(const char *path, mode_t mode)
 	debug("somix_mkdir(): complete");
 	return 0;
 }
+
+static int somix_rmdir(const char *path)
+{
+	info("somix_rmdir(): removing directory \"%s\"...", path);
+
+	return 0;
+}
+
+static int somix_rename(const char *old_path, const char *new_path)
+{
+	info("somix_rename(): renaming \"%s\" to \"%s\"...", old_path, new_path);
+
+	return 0;
+}
+
+static int somix_releasedir(const char *path, struct fuse_file_info *fi)
+{
+	debug("somix_releasedir(): releasing directory \"%s\"...", path);
+
+	return 0;
+}
+
+static int somix_statfs(const char *path, struct statvfs *svfs)
+{
+	debug("somix_statfs(): stat call made. path=\"%s\"", path);
+
+	return 0;
+}
+
 	
 static struct fuse_operations somix_oper = {
 /* we do the job of .init in main since we want to exit gracefully if anything
@@ -272,6 +301,10 @@ static struct fuse_operations somix_oper = {
 	.truncate	= somix_truncate,
 	.unlink		= somix_unlink,
 	.mkdir		= somix_mkdir,
+	.rmdir		= somix_rmdir,
+	.rename		= somix_rename,
+	.releasedir	= somix_releasedir,
+	.statfs		= somix_statfs,
 /*
 	.opendir	= minix_open,
 	.mkdir		= minix_mkdir,
