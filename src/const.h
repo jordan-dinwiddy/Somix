@@ -40,7 +40,7 @@
 #define HAVE_GETXATTR 1
 
 /* buffer cache */
-#define NR_BUFS	1024		/* blocks in buffer cache */
+#define NR_BUFS	1024*10		/* blocks in buffer cache - 10 Meg */
 #define NR_BUF_HASH 128		/* size of buffer hash table. power of 2 */
 #define BLOCK_ALIGN 1024	/* the alignment of the address for the data 
 				 * portion of a minix_block */
