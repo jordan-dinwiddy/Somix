@@ -129,7 +129,7 @@ static int somix_read(const char *path, char *buf, size_t size, off_t offset,
 {
 	struct minix_inode *inode = (struct minix_inode *) fi->fh;
 	
-	info("somix_read(): reading bytes %d -> %d from file \"%s\"...",
+	debug("somix_read(): reading bytes %d -> %d from file \"%s\"...",
 		(int) offset, (int) (offset + size), path);
 	if(inode == NULL) {
 		panic("read(\"%s\", ...): appear the specified file is not open",
@@ -148,7 +148,7 @@ static int somix_write(const char *path, const char *buf, size_t size,
 {
 	struct minix_inode *inode = (struct minix_inode *) fi->fh;
 
-	info("somix_write(): writing bytes %d -> %d of file \"%s\"...",
+	debug("somix_write(): writing bytes %d -> %d of file \"%s\"...",
 		(int) offset, (int) (offset + size), path);
 	if(inode == NULL) 
 		panic("write(): called but no inode available");
@@ -201,7 +201,7 @@ void somix_destroy(void * v)
 static int somix_truncate(const char *path, off_t offset)
 {
 	struct minix_inode *i;
-	info("somix_truncate(): truncating \"%s\" to %d bytes...", path, 
+	debug("somix_truncate(): truncating \"%s\" to %d bytes...", path, 
 		(int) offset);
 
 	i = resolve_path(sb.root_inode, path, PATH_RESOLVE_ALL);
@@ -254,14 +254,22 @@ static int somix_mkdir(const char *path, mode_t mode)
 
 static int somix_rmdir(const char *path)
 {
-	info("somix_rmdir(): removing directory \"%s\"...", path);
+	debug("somix_rmdir(): removing directory \"%s\"...", path);
 
+	if(!unlink(path))
+		return -EIO;	/* TODO: return correct error */
+
+	debug("somix_rmdir(\"%s\"): complete", path);
 	return 0;
 }
 
 static int somix_rename(const char *old_path, const char *new_path)
 {
-	info("somix_rename(): renaming \"%s\" to \"%s\"...", old_path, new_path);
+	int ret;
+	debug("somix_rename(): renaming \"%s\" to \"%s\"...", old_path, new_path);
+
+	if((ret = rename(old_path, new_path)) != 1)
+		return ret;
 
 	return 0;
 }

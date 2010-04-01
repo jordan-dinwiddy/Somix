@@ -517,6 +517,44 @@ int dir_delete(struct minix_inode *p_dir, const char *file)
 	return 0;
 }
 
+/**
+ * Performs the rename operation. 
+ *
+ * Returns 1 on success.
+ */
+int rename(const char *src_path, const char *dest_path)
+{
+	struct minix_inode *s_dir, *d_dir, *i;
+	char old_name[FILENAME_SIZE];
+	char new_name[FILENAME_SIZE];
+
+	debug("rename(\"%s\", \"%s\"): renaming...", src_path, dest_path);
+	if((s_dir = last_dir(src_path, old_name)) == NULL)
+		return -ENOENT;
+
+	if((d_dir = last_dir(dest_path, new_name)) == NULL)
+		return -ENOENT;
+
+	if((i = advance(s_dir, old_name)) == NULL)
+		return -ENOENT;
+
+	/* add file to the new directory first */
+	dir_add(d_dir, new_name, i->i_num);
+	
+	/* now delete from the old directory */
+	if(dir_delete(s_dir, old_name) != 1) {
+		/* something went wrong */
+		panic("rename(\"%s\", \"%s\"): unable to delete old entry",
+			src_path, dest_path);
+	}
+
+	put_inode(s_dir);
+	put_inode(d_dir);
+	put_inode(i);
+
+	debug("rename(\"%s\", \"%s\"): success", src_path, dest_path);
+	return 1;
+}
 
 /**
  * Perform the unlink operation.
