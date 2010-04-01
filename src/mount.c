@@ -1,6 +1,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
 #include "const.h"
 #include "cache.h"
 #include "comms.h"
@@ -140,8 +142,45 @@ void minix_mount(const char *device_name)
 
 }
 
+/**
+ * Calulate difference between two timevals.
+ *
+ * From
+ * http://www.cs.utah.edu/dept/old/texinfo/glibc-manual-0.02/library_19.html
+ */
+int timeval_subtract(struct timeval *result, struct timeval *x, 
+	struct timeval *y)
+{
+	if (x->tv_usec < y->tv_usec) {
+		int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
+		y->tv_usec -= 1000000 * nsec;
+		y->tv_sec += nsec;
+	}
+	if (x->tv_usec - y->tv_usec > 1000000) {
+		int nsec = (y->tv_usec - x->tv_usec) / 1000000;
+		y->tv_usec += 1000000 * nsec;
+		y->tv_sec -= nsec;
+	}
+
+	/* Compute the time remaining to wait. tv_usec is certainly 
+	 * positive. */
+	result->tv_sec = x->tv_sec - y->tv_sec;
+	result->tv_usec = x->tv_usec - y->tv_usec;
+
+	/* Return 1 if result is negative. */
+	return x->tv_sec < y->tv_sec;
+}
+
 void minix_unmount(void)
 {
+	clock_t cpu_start, cpu_end;
+	struct timeval wall_start, wall_end, wall_elapsed;
+
+	float cpu_elapsed;
+	
+	cpu_start = clock();
+	gettimeofday(&wall_start, NULL);
+
 	debug("minix_unmount(): saving root inode...");
 	put_inode(sb.root_inode);
 
@@ -156,4 +195,15 @@ void minix_unmount(void)
 	
 	debug("minix_unmount(): syncing with disk...");
 	sync_cache();
+
+	cpu_end = clock();
+	gettimeofday(&wall_end, NULL);
+
+	cpu_elapsed = ((float) (cpu_end - cpu_start)) / CLOCKS_PER_SEC;
+	timeval_subtract(&wall_elapsed, &wall_end, &wall_start);
+
+	info_1("unmount(): CPU time elapsed: %f seconds", cpu_elapsed);
+	info_1("umount(): Wall time elapsed: %ld.%06ld seconds", 
+		(long) wall_elapsed.tv_sec, 
+		(long) wall_elapsed.tv_usec);
 }
