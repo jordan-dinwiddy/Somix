@@ -102,11 +102,6 @@ static int somix_open(const char *path, struct fuse_file_info *fi)
 		return -ENOENT;
 	}
 
-	if(inode->i_num == ROOT_INODE) {
-		put_inode(inode);
-		inode = sb.root_inode;
-	}
-
 	/* set file handle to point to inode */
 	fi->fh = (unsigned long) inode;
 	return 0;
@@ -273,7 +268,18 @@ static int somix_rename(const char *old_path, const char *new_path)
 
 static int somix_releasedir(const char *path, struct fuse_file_info *fi)
 {
+	struct minix_inode *inode = (struct minix_inode *) fi->fh;
+
 	debug("somix_releasedir(): releasing directory \"%s\"...", path);
+
+	if(inode == NULL) {
+		debug("release(\"%s\", ...): cannot release. "
+			"file does not appear to be open", path);
+		return -1;
+	}
+
+	put_inode(inode);
+
 
 	return 0;
 }
