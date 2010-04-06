@@ -316,9 +316,10 @@ void put_block(struct minix_block *blk, int block_type)
 		return;
 	}
 
-	if(blk->blk_count == 0) 
-		panic("put_block(%d): attempting to put block that is not in "
+	if(blk->blk_count == 0) {
+		debug("put_block(%d): attempting to put block that is not in "
 			"use", blk->blk_nr);
+	}
 
 	blk->blk_count--;
 	if(blk->blk_count > 0) {
