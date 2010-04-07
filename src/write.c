@@ -524,7 +524,7 @@ int dir_delete(struct minix_inode *p_dir, const char *file)
  */
 int rename(const char *src_path, const char *dest_path)
 {
-	struct minix_inode *s_dir, *d_dir, *i;
+	struct minix_inode *s_dir, *d_dir, *i, *di;
 	char old_name[FILENAME_SIZE];
 	char new_name[FILENAME_SIZE];
 
@@ -538,6 +538,17 @@ int rename(const char *src_path, const char *dest_path)
 	if((i = advance(s_dir, old_name)) == NULL)
 		return -ENOENT;
 
+	/* if the destination already exists we must first delete the 
+ 	 * destination file. */
+	if((di = advance(d_dir, new_name)) != NULL) {
+		dir_delete(d_dir, new_name);
+
+		di->i_nlinks--;
+		di->i_dirty = TRUE;
+
+		put_inode(di);	
+	}
+	
 	/* add file to the new directory first */
 	dir_add(d_dir, new_name, i->i_num);
 	
