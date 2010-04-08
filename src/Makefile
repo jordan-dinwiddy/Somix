@@ -1,5 +1,5 @@
 objects = minix_fuse.o minix_fuse_lib.o
-CC = gcc
+CC = gcc -O2
 
 all : somix mkfs.somix tests 
 
