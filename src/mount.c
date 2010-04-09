@@ -104,7 +104,7 @@ static void minix_print_version(void)
 		default:
 			printf("unable to identify minix file system\n");
 	}
-
+	printf("block size = %d bytes\n", BLOCK_SIZE);
 	printf("buffer cache size = %dMB\n", NR_BUFS / 1024);
 	printf("buffer cache hash table size = %d\n", NR_BUF_HASH);
 
