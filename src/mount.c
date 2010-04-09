@@ -107,6 +107,12 @@ static void minix_print_version(void)
 
 	printf("buffer cache size = %dMB\n", NR_BUFS / 1024);
 	printf("buffer cache hash table size = %d\n", NR_BUF_HASH);
+
+#ifdef CACHE_WRITE_IMMED_OFF
+	printf("cache write_immed = OFF\n");
+#else
+	printf("cache write_immed = ON\n");
+#endif
 }
 
 
