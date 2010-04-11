@@ -3,7 +3,7 @@
 
 /* Define if we do _not_ want to immedietely flush critical blocks such as
  * inodes and indirect mapping blocks to storage. */
-//#define CACHE_WRITE_IMMED_OFF
+#define CACHE_WRITE_IMMED_OFF
 
 /**
  * Implements the buffer cache used to reduce the number of disk accesses. The
