@@ -5,19 +5,23 @@ all : somix mkfs.somix tests
 
 tests: test_cache test_resolv_path 
 	
-test_cache : test_cache.c cache.o comms.o const.h
-	$(CC) -Wall test_cache.c cache.o comms.o -o test_cache
+test_cache : test_cache.c cache.o comms.o const.h short_array.o
+	$(CC) -Wall test_cache.c cache.o comms.o short_array.o -o test_cache
 
 test_resolv_path : test_resolv_path.c comms.o bitmap.o mount.o cache.o \
-		inode.o path.o read.o
+		inode.o path.o read.o short_array.o 
 	$(CC) -Wall test_resolv_path.c comms.o bitmap.o mount.o cache.o \
-		inode.o path.o read.o -o test_resolv_path
+		inode.o path.o read.o short_array.o -o test_resolv_path
 
-somix : somix.c comms.o bitmap.o mount.o cache.o inode.o path.o read.o write.o
+somix : somix.c comms.o bitmap.o mount.o cache.o inode.o path.o read.o write.o \
+		short_array.o
 	$(CC) -Wall -D_FILE_OFFSET_BITS=64 -I/usr/local/include/fuse \
 		-pthread -L/usr/local/lib -lfuse -lrt -ldl \
 		 somix.c comms.o bitmap.o mount.o cache.o inode.o path.o \
-		read.o write.o -o somix
+		read.o short_array.o write.o -o somix
+
+short_array.o : short_array.h short_array.c
+	$(CC) -Wall -c short_array.c
 
 mkfs.somix : include/nls.h include/minix.h include/bitops.h mkfs.somix.c
 	$(CC) -Iinclude -fsigned-char -fomit-frame-pointer -O3 -o \

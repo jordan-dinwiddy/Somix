@@ -14,3 +14,6 @@ mkfs.somix
 # test executables
 test_cache
 test_resolv_path
+
+# cache write log
+cache_write.log

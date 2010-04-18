@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include "const.h"
 #include "comms.h"
+#include "short_array.h"
 #include "cache.h"
 
 struct minix_block *front;	/* front of buffer chain. LRU. */
@@ -22,7 +23,8 @@ struct minix_block
 	*cache_hash[NR_BUF_HASH];	/* hash table of block chains */
 int bufs_in_use = 0;			/* number of buffers in use */
 int fd;					/* I/O device file descriptor */
-
+struct short_array *write_log;		/* where we record every block written
+					 * to disk. */
 
 /**
  * Create a new empty block with the data portion set to BLOCK_SIZE bytes
@@ -66,6 +68,8 @@ static void write_block(struct minix_block *blk)
 	int disk_offset = blk->blk_nr * BLOCK_SIZE;
 	info("\033[31mwrite_block(%d): writing block %d to disk offset %d...\033[0m", 
 		blk->blk_nr, blk->blk_nr, disk_offset);
+	
+	short_array_add(blk->blk_nr, write_log);	
 	
 	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
 		/* seek failed */
@@ -184,7 +188,33 @@ void init_cache(void)
 		"cache_hash[%d]...",
 		 NO_BLOCK & (NR_BUF_HASH - 1));
 	cache_hash[NO_BLOCK & (NR_BUF_HASH - 1)] = front;
-		
+	
+	/* init the write log */
+	write_log = short_array_init(ARR_DEFAULT_SIZE);	
+}
+
+/**
+ * Clean up the cache and write the log file.
+ *
+ * After a cache destory, an init_cache must be used to start using the cache
+ * again.
+ */
+void cache_destroy(void)
+{
+	/* TODO: Should really clean up cache memory. */
+
+	info_1("cache_destroy(): saving %d entries from cache write log to"
+		" %s... ", write_log->size, CACHE_WRITE_LOG_FILE);
+
+	if(short_array_unsigned_write(write_log, CACHE_WRITE_LOG_FILE) == 0) {
+		info_1("cache_destroy(): write successful");
+	}
+	else {
+		info_1("cache_destroy(): write failed");
+	}
+
+	debug("cache_destroy(): destroying cache write log...");
+	short_array_destroy(write_log);
 }
 
 /**

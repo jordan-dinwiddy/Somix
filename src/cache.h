@@ -1,6 +1,8 @@
 #ifndef _MINIX_CACHE
 #define _MINIX_CACHE
 
+#define CACHE_WRITE_LOG_FILE "cache_write.log"
+
 /* Define if we do _not_ want to immedietely flush critical blocks such as
  * inodes and indirect mapping blocks to storage. */
 #define CACHE_WRITE_IMMED_OFF
@@ -76,4 +78,5 @@ int sync_cache(void);
 
 void print_cache(void);
 
+void cache_destroy(void);
 #endif

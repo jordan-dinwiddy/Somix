@@ -215,4 +215,7 @@ void minix_unmount(void)
 	info_1("umount(): Wall time elapsed: %ld.%06ld seconds", 
 		(long) wall_elapsed.tv_sec, 
 		(long) wall_elapsed.tv_usec);
+
+	info_1("unmount(): destroying cache...");
+	cache_destroy();
 }
