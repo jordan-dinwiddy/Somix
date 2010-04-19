@@ -52,7 +52,7 @@ int short_array_unsigned_write(struct short_array *array, const char *filename)
 	if(fp == NULL) return -1;
 
 	short_array_print_unsigned(array, fp);
-
+	fclose(fp);
 	return 0;
 }
 
