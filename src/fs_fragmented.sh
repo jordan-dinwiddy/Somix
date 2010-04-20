@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SMALLEST=32
-LARGEST=64
+SMALLEST=64
+LARGEST=256
 WRITE_LIMIT=$((20*1024))
 
 # $0 = min
