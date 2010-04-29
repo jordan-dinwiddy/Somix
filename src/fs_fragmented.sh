@@ -2,7 +2,7 @@
 
 SMALLEST=64
 LARGEST=256
-WRITE_LIMIT=$((20*1024))
+WRITE_LIMIT=$((60*1024))
 
 # $0 = min
 # $1 = max
