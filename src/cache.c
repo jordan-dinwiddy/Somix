@@ -26,6 +26,8 @@ int fd;					/* I/O device file descriptor */
 struct short_array *write_log;		/* where we record every block written
 					 * to disk. */
 
+unsigned long cache_read_count = 0;	/* number of device reads */
+
 /**
  * Create a new empty block with the data portion set to BLOCK_SIZE bytes
  * and correctly aligned for O_DIRECT I/O.
@@ -99,6 +101,8 @@ static void read_block(struct minix_block *blk)
 
 	info("\033[32mread_block(%d): reading block %d from disk offset %d...\033[0m", 
 		blk->blk_nr, blk->blk_nr, disk_offset);
+
+	cache_read_count++;
 
 	if(lseek(fd, disk_offset, SEEK_SET) != disk_offset) {
 		panic("read_block(%d): unable to seek to disk offset %d",
@@ -202,6 +206,8 @@ void init_cache(void)
 void cache_destroy(void)
 {
 	/* TODO: Should really clean up cache memory. */
+
+	info_1("cache_destory(): total device reads = %u\n", cache_read_count);
 
 	info_1("cache_destroy(): saving %d entries from cache write log to"
 		" %s... ", write_log->size, CACHE_WRITE_LOG_FILE);
