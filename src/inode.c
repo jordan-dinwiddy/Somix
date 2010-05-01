@@ -165,6 +165,7 @@ void put_inode(struct minix_inode *inode)
 			free_inode(inode->i_num);
 			/* why dont we mark inode as clean? don't see why we
  			 * need to write a deleted inode to disk. */
+		//	inode->i_dirty = FALSE;
 		}
 
 		if(inode->i_dirty == TRUE) {
