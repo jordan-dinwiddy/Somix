@@ -1,0 +1,80 @@
+Author: Jordan Dinwiddy
+Date:   April 2009
+
+1. To Compile:
+	make clean
+	make
+
+	NOTE: The latest version of the FUSE framework is required 
+		to compile and run Somix.
+
+2. To Run:
+	Create a mount point:
+		$ mkdir test_mnt_point/
+	
+	Decide on what device you want to use the filesystem with. Here
+	I will just use an image file:
+		$ dd if=/dev/zero of=TEST.IMG bs=1M count=70
+
+	(If you want to use an actual device just make sure you have
+	 the correct permissions first)
+
+	To format your selected device with the Somix filesystem:
+		$ ./mkfs.somix TEST.IMG
+
+	(NOTE: Since non-optimised Somix has exactly the same disk layout
+	 as MinixFS, you could just use the mkfs.minix program distributed
+	 as part of the util-linux project - see freshmeat.net)
+
+	To mount the filesystem:
+		$ ./somix -dev=TEST.IMG test_mnt_point/ -s
+
+	After Somix initialises, it will return you back to the command
+	prompt. Any further filesystem requests to test_mnt_point/
+	will be processed by Somix.
+
+	To unmount the filesystem:
+		fusermount -u test_mnt_point
+
+3. Debugging
+	After mounting Somix with the command above it will fall to 
+	the background and no output will be produced.
+
+	If you would like to gain an insight into what Somix is actually
+	doing then you can increase verbosity. The first step towards
+	doing this is to execute the filesystem in the foreground. You
+	can do this through the use of the -f flag. So to mount and
+	execute Somix in the foreground type:
+		$ ./somix -dev=TEST.IMG test_mnt_point/ -s -f
+
+	However, by default only the most critical output is printed. To
+	change this you have to define some constants within the comms.h
+	header file. There are 3 constants of interest:
+		- INFO_LEVEL_1
+			- This is the default verbosity level. It displays
+			  output during mount and unmount but that's pretty
+			  much it.
+		- INFO_LEVEL 2
+			- This is an increased verbosity level. It
+			  primarily outputs the individual block I/O
+			  requests that the block cache issues to the
+			  underlying device (or image file). This can
+			  can be useful to see what's going on!
+		- DEBUG
+			- This is 'insane' verbosity! I wouldn't expect
+			  anyone to be able to make much sense of this 
+			  output but it is the most detailed.
+
+	The above three verbosity levels are independent. So if you would
+	like the maximum verbosity available you will have to define
+	INFO_LEVEL_1, INFO_LEVEL_2 and DEBUG.
+
+	Once you have modified comms.h with your preferences:
+		$ make clean
+		$ make
+
+	Now, when you run Somix in the foreground, the information you 
+	requested will be displayed.
+
+
+
