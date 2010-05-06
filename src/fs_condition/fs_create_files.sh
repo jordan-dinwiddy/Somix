@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# fs_create_file.sh - Create a number of randomly sized files in the 
+# fs_create_files.sh - Create a number of randomly sized files in the 
 # current working directory.
 #
 # The script will continue creating files until it has written greater
