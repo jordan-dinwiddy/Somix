@@ -1,6 +1,0 @@
-Bonnie ++			Synthetic
-				Can avoid cache with -b switch. causes
-				flush after every write.
-PCMark Vantage HDD suite        Realistic
-IOMete1r			Can test file systems but GUI part works
-				on windows only.
