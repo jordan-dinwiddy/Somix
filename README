@@ -10,10 +10,10 @@ Description
 This project investigates a number of techniques for improving filesystem performance
 on Solid State Drives (SSDs). As part of the work carried out, a new simple filesystem
 called Somix was developed - providing the framework for which optimisations could be
-implemented, tested and analysed. The results of this project show that two out of the three
-optimisations implemented have the ability to improve performance on an underlying SSD.
-Unfortunately however, the scenarios for which these optimisations are most beneficial 
-seem reasonably rare.
+implemented, tested and analysed. The results of this project show that two out of the 
+three optimisations implemented have the ability to improve performance on an 
+underlying SSD. Unfortunately however, the scenarios for which these optimisations are 
+most beneficial seem reasonably rare.
 
 
 More Info
